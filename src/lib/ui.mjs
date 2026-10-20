@@ -58,9 +58,9 @@ $('events').innerHTML = events.length
   ? events.map(ev => {
     const name = MAIN[ev.key].name, up = ev.direction > 0;
     const what = ev.type === 'range' ? `${name} je bila ${up ? 'previsoka' : 'prenizka'}` : `${name} se je hitro ${up ? 'zvišala' : 'znižala'}`;
-    return `<li data-status="${ev.severity}"><b>${time(ev.start)}</b> ${what}<span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span></li>`;
+    return `<li data-status="${ev.severity}"><b>${time(ev.start)}</b><em>${what}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span></li>`;
   }).join('')
-  : '<li data-status="normal">V zadnjih 24 urah ni bilo nič posebnega.</li>';
+  : '<li data-status="normal"><em>V zadnjih 24 urah ni bilo nič posebnega.</em></li>';
 
 // Spectrometer: shape of the spectrum (start vs now) + every channel over time as a heatmap.
 function spectrum(range) {

@@ -18,11 +18,12 @@ body {
   font: 20px/1.5 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-main { max-width: 1040px; margin: 0 auto; }
+main { margin: 0 auto; }
 button, select { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 h2 { font-size: 26px; letter-spacing: -0.01em; margin: 36px 0 12px; }
 section > h2:first-child { margin-top: 4px; }
+#everyone h2 { font-size: 22px; margin: 28px 0 10px; }
 .muted { color: var(--muted); }
 
 /* View switch: bottom tab bar on phones */
@@ -71,16 +72,19 @@ section > h2:first-child { margin-top: 4px; }
 .card[data-status="attention"] .word { background: var(--bad-bg); }
 
 /* Events */
-.events { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.events li, .events li[data-status] {
-  position: relative; padding: 16px 18px 16px 46px; border-radius: var(--radius);
-  background: var(--card); color: var(--ink); box-shadow: var(--shadow); font-weight: 600;
+.events { list-style: none; padding: 0 18px; margin: 0; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }
+.events li {
+  display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 2px 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--line); font-weight: 600;
 }
-.events li::before { content: ''; position: absolute; left: 18px; top: 24px; width: 14px; height: 14px; border-radius: 50%; background: var(--ok-dot); }
+.events li[data-status] { background: none; color: var(--ink); }
+.events li:last-child { border-bottom: 0; }
+.events li::before { content: ''; width: 14px; height: 14px; border-radius: 50%; background: var(--ok-dot); }
 .events li[data-status="unusual"]::before { background: var(--warn-dot); }
 .events li[data-status="attention"]::before { background: var(--bad-dot); }
-.events li b { display: block; font-size: 18px; color: var(--muted); font-weight: 600; }
-.events li span { display: block; width: fit-content; margin-top: 8px; padding: 2px 12px; border-radius: 999px; background: var(--bg); color: var(--muted); font-size: 18px; font-weight: 650; }
+.events b { font-size: 17px; color: var(--muted); font-weight: 600; }
+.events em { font-style: normal; grid-column: 2 / -1; }
+.events span { grid-column: 3; grid-row: 1; padding: 0 10px; border-radius: 999px; background: var(--bg); color: var(--muted); font-size: 16px; font-weight: 650; white-space: nowrap; }
 
 /* Period switch: sticky segmented pill */
 .controls { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--line); }
@@ -141,13 +145,13 @@ tr:last-child td { border-bottom: 0; }
 .facts [data-status="attention"] dd { color: var(--bad); }
 #maintenance .scroll { border-radius: var(--radius); box-shadow: var(--shadow); }
 
-footer { margin: 40px auto 0; max-width: 1040px; font-size: 16px; text-align: center; }
+footer { margin: 40px auto 0; font-size: 16px; text-align: center; }
 
 /* Larger screens: tab bar moves to the top as a pill switch, more room */
 @media (min-width: 760px) {
-  body { padding: 24px 32px 48px; font-size: 22px; }
+  body { padding: 20px 32px 16px; font-size: 22px; }
   .views {
-    position: sticky; top: 16px; inset: auto; max-width: 560px; margin: 0 auto 32px;
+    position: sticky; top: 16px; inset: auto; max-width: 560px; margin: 0 auto 20px;
     grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 6px;
     border: 0; border-radius: 999px; box-shadow: var(--shadow);
   }
@@ -155,12 +159,18 @@ footer { margin: 40px auto 0; max-width: 1040px; font-size: 16px; text-align: ce
   .views svg { width: 26px; height: 26px; }
   .views button[aria-pressed="true"] { background: var(--accent); color: #fff; }
   h2 { font-size: 30px; margin-top: 48px; }
-  .status { padding: 32px; font-size: 44px; gap: 24px; }
-  .status .icon { width: 76px; height: 76px; font-size: 40px; }
+  .status { padding: 22px 28px; font-size: 40px; gap: 20px; }
+  .status .icon { width: 64px; height: 64px; font-size: 34px; }
   .cards { grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px; }
-  .card { padding: 20px 22px; }
+  .card { padding: 16px 22px; }
   .card .value { font-size: 52px; }
-  .graphs { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .graphs { grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; }
+  .events { padding: 0 24px; }
+  .events li { grid-template-columns: 14px auto 1fr auto; gap: 16px; padding: 8px 0; }
+  .events em { grid-column: 3; }
+  .events span { grid-column: 4; }
+  #everyone h2 { margin: 22px 0 8px; font-size: 24px; }
+  footer { margin-top: 16px; }
   .chart { padding: 20px 24px; }
   .chart svg { height: 180px; }
   .sticky { top: 96px; }
