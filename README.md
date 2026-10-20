@@ -36,14 +36,14 @@ cd frontend && npm test
 
 ## Pomen meritev za laike
 
-Pogled **Voda** vsako meritev prevede v vprašanje in preprost odgovor (`src/lib/plain.mjs`):
+Pogled **Voda** vsako meritev prevede v preprost odgovor (`src/lib/plain.mjs`):
 
-| Meritev | Vprašanje | Odgovori | Vir referenčnih vrednosti |
+| Meritev | Naslov kartice | Odgovori | Vir referenčnih vrednosti |
 |---|---|---|---|
-| Temperatura | Temperatura vode | samo številka v °C | – |
-| Motnost | Kako bistra je voda? | bistra < 1 NTU, rahlo motna < 5, motna < 50, zelo motna | smernice SZO za pitno vodo (5 NTU, idealno < 1) |
-| Prevodnost | Koliko soli je v vodi? | malo < 100 µS/cm, zmerno < 800, veliko < 2000, zelo veliko | tipične vrednosti: destilirana ~1, pipa/reke 50–800, morje ~50.000 |
-| Fluorescenca | Ali so v vodi znaki odplak? | manj / kot običajno / več kot običajno (glede na nastavljeno območje) | poročilo WaQuMoS: UV fluorescenca, podobna triptofanu, kot kazalnik fekalnega onesnaženja (E. coli) |
+| Temperatura | Temperatura | samo številka v °C | – |
+| Motnost | Bistrost | bistra < 1 NTU, rahlo motna < 5, motna < 50, zelo motna | smernice SZO za pitno vodo (5 NTU, idealno < 1) |
+| Prevodnost | Soli | malo < 100 µS/cm, zmerno < 800, veliko < 2000, zelo veliko | tipične vrednosti: destilirana ~1, pipa/reke 50–800, morje ~50.000 |
+| Fluorescenca | Znaki odplak | manj / kot običajno / več kot običajno (glede na nastavljeno območje) | poročilo WaQuMoS: UV fluorescenca, podobna triptofanu, kot kazalnik fekalnega onesnaženja (E. coli) |
 
 Fluorescenca je v voltih in ni umerjena, zato se primerja samo z običajnim območjem naprave. Ne šteje bakterij.
 Spektrometer bi po poročilu lahko prepoznal alge (680 nm), mulj in železo (350–400 nm), vendar to še ni umerjeno, zato ga pogled Voda ne prikazuje.

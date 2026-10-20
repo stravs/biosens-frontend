@@ -5,21 +5,21 @@
 
 const MEANING = {
   // Temperature needs no translation: the number itself is the answer.
-  temperature: { question: 'Temperatura vode', number: true },
+  temperature: { question: 'Temperatura', number: true },
   turbidity: {
-    question: 'Kako bistra je voda?',
+    question: 'Bistrost',
     bands: [[1, 'Bistra'], [5, 'Rahlo motna'], [50, 'Motna'], [Infinity, 'Zelo motna']],
     span: [0, 100],
     ends: ['bistra', 'blatna'],
   },
   conductivity: {
-    question: 'Koliko soli je v vodi?',
+    question: 'Soli',
     bands: [[100, 'Malo'], [800, 'Zmerno'], [2000, 'Veliko'], [Infinity, 'Zelo veliko']],
     span: [0, 3000],
     ends: ['malo', 'veliko'],
   },
   fluorescenceRaw: {
-    question: 'Ali so v vodi znaki odplak?',
+    question: 'Znaki odplak',
     relative: true,
     ends: ['manj', 'več'],
   },
