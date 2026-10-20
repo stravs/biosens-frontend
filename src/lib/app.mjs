@@ -1,4 +1,5 @@
 // Demo data and CSV export. The page itself lives in ui.mjs.
+import { DEMO_REFERENCE } from './spectrum.mjs';
 
 const CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'R', 'I', 'S', 'J', 'T', 'U', 'V', 'W', 'K', 'L'];
 const WAVELENGTHS = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940];
@@ -29,11 +30,21 @@ export function buildDemoData(deviceId, now = Date.now()) {
     const phase = index / 288 * Math.PI * 2;
     const ripple = Math.sin(index * 1.71 + deviceId) * 0.08;
     const fluorescenceRaw = Number((2.12 - deviceId * 0.03 + Math.cos(phase) * 0.025 + ripple * 0.02).toFixed(4));
+    const turbidity = Number((3.1 + deviceId * 0.4 + Math.sin(phase * 2) * 0.35 + Math.exp(-(((index - 1938) / 16) ** 2)) * 2 + ripple).toFixed(2));
+    // Spectrum = clean-water reading x transmission. Particles dim all channels (follows turbidity),
+    // a little extra loss at the blue end, and a small algae dip at 680 nm that grows over the week.
+    const algae = 0.004 + 0.012 * index / 2016 + Math.sin(phase) * 0.002;
+    const spectrum = CHANNELS.map((channel, i) => {
+      const nm = WAVELENGTHS[i];
+      const loss = 0.006 * turbidity + (nm <= 460 ? 0.012 * (480 - nm) / 70 : 0)
+        + (nm === 680 ? algae : 0) + Math.sin(index * 0.37 + i * 2.1) * 0.0004;
+      return { channel, wavelength: nm, value: Math.round(DEMO_REFERENCE[i] * (1 - loss) * 10) / 10 };
+    });
     return {
       unitId: deviceId, receivedAt: end - (2016 - index) * 300000,
       temperature: Number((18.4 + deviceId * 0.8 + Math.sin(phase - 1) * 1.1 + ripple).toFixed(3)),
       conductivity: Number((426 + deviceId * 18 + Math.sin(phase + 0.5) * 14 + ripple * 15).toFixed(1)),
-      turbidity: Number((3.1 + deviceId * 0.4 + Math.sin(phase * 2) * 0.35 + Math.exp(-(((index - 1938) / 16) ** 2)) * 2 + ripple).toFixed(2)),
+      turbidity,
       fluorescenceRaw,
       // Illustrative only; these are not calibration coefficients for an actual device.
       fluorescence: Number(Math.max(0, 38.766 - 16.2447 * fluorescenceRaw).toFixed(1)),
@@ -42,7 +53,7 @@ export function buildDemoData(deviceId, now = Date.now()) {
       chipTemp3: Math.round(25 + deviceId + Math.sin(phase + 0.8)),
       rssi: Math.round(-83 - deviceId * 2 + Math.sin(index) * 5),
       snr: Math.round((8 + Math.cos(index) * 2) * 10) / 10,
-      spectrum: CHANNELS.map((channel, i) => ({ channel, wavelength: WAVELENGTHS[i], value: Math.round((860 + Math.sin(i * 0.46 + deviceId) * 160 + Math.cos(index / 10 + i) * 12) * 10) / 10 })),
+      spectrum,
     };
   });
 }

@@ -15,6 +15,16 @@ npm run build      # statična stran v dist/
 
 - **Voda** – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
 - **Podatki** – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spektrometer; tabela vseh meritev; prenos CSV.
+
+## Spektrometer
+
+Kot v poročilu WaQuMoS: naprava meri, koliko svetlobe halogenske žarnice pride skozi vodo na 18 kanalih (AS7265x, 410–940 nm, vsak širok ~20 nm). Vzorec se primerja s čisto (deionizirano) vodo = 100 % prepustnosti (`src/lib/spectrum.mjs`).
+
+- **Spekter**: prepustnost v % po valovni dolžini, zdaj in na začetku obdobja, z barvnim trakom kanalov.
+- **Kazalniki skozi čas** (odstotne točke izgubljene svetlobe): vsi kanali (mulj, delci), modri del 410–435 nm (železo, mangan), alge = dodatna izguba pri 680 nm nad črto med 645 in 705 nm (klorofil; kot metoda FLH).
+- **Toplotna karta**: vsi kanali skozi čas na eni skupni lestvici.
+
+`DEMO_REFERENCE` (odčitek čiste vode po kanalih) je izmišljen. Za pravo uporabo ga je treba izmeriti z deionizirano vodo ob umerjanju.
 - **Naprava** – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
 
 Meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
