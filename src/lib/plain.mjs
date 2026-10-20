@@ -19,7 +19,7 @@ const MEANING = {
     ends: ['malo', 'veliko'],
   },
   fluorescenceRaw: {
-    question: 'Znaki odplak',
+    question: 'Organsko onesnaženje',
     relative: true,
     ends: ['manj', 'več'],
   },
@@ -57,7 +57,7 @@ const EVENT_TEXT = {
   temperature: { change: ['Voda se je hitro segrela', 'Voda se je hitro ohladila'], range: ['Voda je bila toplejša kot običajno', 'Voda je bila hladnejša kot običajno'] },
   turbidity: { change: ['Voda je hitro postala bolj motna', 'Voda je hitro postala bolj bistra'], range: ['Voda je bila bolj motna kot običajno', 'Voda je bila bolj bistra kot običajno'] },
   conductivity: { change: ['Mineralov je hitro naraslo', 'Mineralov je hitro upadlo'], range: ['Mineralov je bilo več kot običajno', 'Mineralov je bilo manj kot običajno'] },
-  fluorescenceRaw: { change: ['Znaki odplak so hitro narasli', 'Znaki odplak so hitro upadli'], range: ['Znakov odplak je bilo več kot običajno', 'Znakov odplak je bilo manj kot običajno'] },
+  fluorescenceRaw: { change: ['Organsko onesnaženje je hitro naraslo', 'Organsko onesnaženje je hitro upadlo'], range: ['Organskega onesnaženja je bilo več kot običajno', 'Organskega onesnaženja je bilo manj kot običajno'] },
 };
 
 export function eventText(event) {
