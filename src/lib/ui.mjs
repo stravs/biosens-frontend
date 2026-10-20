@@ -15,7 +15,7 @@ const STATUS = {
   attention: { text: 'Vrednosti so izven meja', icon: '!' },
   unknown: { text: 'Ni dovolj podatkov', icon: '?' },
 };
-const WORD = { attention: 'Pozor', unusual: 'Nenavadno', normal: 'Normalno' };
+const WORD = { attention: 'Pozor', unusual: 'Nenavadno' };
 
 const $ = id => document.getElementById(id);
 const fmt = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '–';
@@ -48,7 +48,7 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
   const state = assessPoint(rows, rows.length - 1, key, rules[key]).severity ?? 'normal';
   return `<div class="card" data-status="${state}"><h3>${name}</h3>
     <p class="value">${fmt(latest[key], digits)} <small>${FIELDS[key].unit}</small></p>
-    <p class="word">${WORD[state]}</p></div>`;
+    ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
 }).join('');
 
 // Everyone: notable events in plain words, newest first.

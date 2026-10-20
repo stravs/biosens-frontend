@@ -65,7 +65,8 @@ section > h2:first-child { margin-top: 4px; }
 .card .value { margin: 4px 0 2px; font-size: 40px; font-weight: 750; letter-spacing: -0.03em; color: var(--ink); line-height: 1.05; }
 .card .value small { display: block; margin-top: 2px; font-size: 18px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
 .card .word { display: inline-block; margin: 6px 0 0; padding: 2px 12px; border-radius: 999px; font-weight: 700; font-size: 18px; }
-.card[data-status="normal"] .word { background: var(--ok-bg); }
+.card[data-status] .value { color: inherit; }
+.card[data-status="unusual"] .value { color: var(--warn); }
 .card[data-status="unusual"] .word { background: var(--warn-bg); }
 .card[data-status="attention"] .word { background: var(--bad-bg); }
 
