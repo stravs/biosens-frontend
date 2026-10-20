@@ -115,7 +115,7 @@ section > h2:first-child { margin-top: 4px; }
 .event-facts div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--card); }
 .event-facts dt { color: var(--muted); }
 .event-facts dd { margin: 0; font-weight: 700; }
-.chart .mark { fill: var(--accent); opacity: 0.14; }
+.chart .mark { fill: var(--warn-dot); opacity: 0.28; }
 .sheet #event-close { position: sticky; bottom: 0; }
 
 /* Period switch: sticky segmented pill */
@@ -132,6 +132,27 @@ section > h2:first-child { margin-top: 4px; }
 .chart svg { display: block; width: 100%; height: 140px; }
 .chart .line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; }
 .chart .band { fill: var(--ok-bg); }
+
+/* Synced time-series plots */
+.ts h3 { align-items: center; }
+.ts h3 small { font-size: 16px; font-weight: 500; color: var(--muted); }
+.ts .readout { margin-left: auto; text-align: right; font-size: 24px; font-variant-numeric: tabular-nums; }
+.ts .readout small { display: block; font-size: 15px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+.plot { display: grid; grid-template-columns: 46px 1fr; gap: 6px; }
+.plot .area { position: relative; touch-action: pan-y; cursor: crosshair; }
+.ylabels { position: relative; }
+.ts .plot svg { height: 130px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.ylabels span { position: absolute; left: 0; width: 46px; transform: translateY(-50%); font-size: 14px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cursor { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid var(--ink); pointer-events: none; }
+.cursor i { position: absolute; left: 0; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--accent); border: 2px solid var(--card); }
+.ts .axis { padding-left: 52px; font-size: 15px; }
+.ts .axis span:nth-child(2) { text-align: center; }
+.legend-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; margin: 0 0 12px; font-size: 17px; }
+.legend-row span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { display: inline-block; width: 22px; height: 14px; border-radius: 4px; }
+.sw.band { background: var(--ok-bg); border: 1px solid #b9dcc6; }
+.sw.mark { background: color-mix(in oklab, var(--warn-dot) 35%, var(--card)); }
 .axis { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 16px; color: var(--muted); }
 .chart .range { margin: 8px 0 0; font-size: 18px; color: var(--muted); }
 
@@ -197,7 +218,8 @@ footer { margin: 40px auto 0; font-size: 16px; text-align: center; }
   .cards { grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px; }
   .card { padding: 14px 22px; }
   .card .answer { font-size: 36px; }
-  .graphs { grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; }
+  .graphs { gap: 14px; }
+  .ts .plot svg { height: 150px; }
   .events { padding: 0 24px; }
   .events button { grid-template-columns: 14px auto 1fr auto 16px; gap: 16px; min-height: 0; padding: 5px 0; }
   .events em { grid-column: 3; }

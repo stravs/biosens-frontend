@@ -3,6 +3,7 @@ import { FIELDS, buildDemoData, fieldsForView, rowValue, selectRange, toCsv } fr
 import { assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 import { createDemoRules } from './demo-rules.mjs';
 import { describe, eventText } from './plain.mjs';
+import { mergeSpans, segments, ticks } from './series.mjs';
 
 const MAIN = {
   temperature: { name: 'Temperatura', digits: 1 },
@@ -16,25 +17,73 @@ const STATUS = {
   unknown: { text: 'Ni dovolj podatkov', icon: '?' },
 };
 const WORD = { unusual: 'Nenavadno' };
+// Chart names: same words as the Voda cards, technical name second.
+const LABEL = { temperature: 'Temperatura', turbidity: 'Bistrost · motnost', conductivity: 'Minerali · prevodnost EC25',
+  fluorescenceRaw: 'Organsko onesnaženje · fluorescenca', fluorescence: 'Kalibrirana fluorescenca' };
+const AXIS_DIGITS = { temperature: 1, turbidity: 1, conductivity: 0, fluorescenceRaw: 2, fluorescence: 1 };
 
 const $ = id => document.getElementById(id);
 const fmt = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '–';
+const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 const time = ms => new Date(ms).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-function chart(rows, key, rule = {}, mark = null) {
-  const w = 800, h = 200, pad = 12;
-  const values = rows.map(row => rowValue(row, key));
-  const lo = Math.min(...values, rule.min ?? Infinity), hi = Math.max(...values, rule.max ?? -Infinity);
-  const x = i => pad + i / (rows.length - 1) * (w - 2 * pad);
-  const y = v => h - pad - (v - lo) / (hi - lo || 1) * (h - 2 * pad);
-  const band = rule.min != null ? `<rect x="0" width="${w}" y="${y(rule.max)}" height="${y(rule.min) - y(rule.max)}" class="band"/>` : '';
-  const path = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
-  const at = ms => x(Math.max(0, rows.findIndex(r => r.receivedAt >= ms)));
-  const span = mark ? `<rect class="mark" x="${at(mark.start)}" width="${Math.max(4, at(mark.end) - at(mark.start))}" y="0" height="${h}"/>` : '';
-  const digits = FIELDS[key].digits, unit = FIELDS[key].unit;
-  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Graf: ${FIELDS[key].title}">${band}${span}<path d="${path}" class="line" vector-effect="non-scaling-stroke"/></svg>
-    <div class="axis"><span>${time(rows[0].receivedAt)}</span><span>${time(rows.at(-1).receivedAt)}</span></div>
-    <p class="range">Najnižje ${fmt(Math.min(...values), digits)} ${unit} · najvišje ${fmt(Math.max(...values), digits)} ${unit}</p>`;
+// Time-series plot: hairline grid with y labels, normal-range band, event spans, gaps left open.
+const W = 800, H = 160, PAD = 8;
+function plot(rows, key, rule = {}, marks = []) {
+  const f = FIELDS[key], val = r => rowValue(r, key);
+  const values = rows.map(val), finite = values.filter(Number.isFinite);
+  const [lo, mid, hi] = ticks(Math.min(...finite, rule.min ?? Infinity), Math.max(...finite, rule.max ?? -Infinity));
+  const x = i => PAD + i / Math.max(1, rows.length - 1) * (W - 2 * PAD);
+  const y = v => H - PAD - (v - lo) / (hi - lo) * (H - 2 * PAD);
+  const index = ms => { const i = rows.findIndex(r => r.receivedAt >= ms); return i < 0 ? rows.length - 1 : i; };
+  const band = rule.min != null ? `<rect class="band" x="0" width="${W}" y="${y(rule.max)}" height="${y(rule.min) - y(rule.max)}"/>` : '';
+  const grid = [lo, mid, hi].map(v => `<line class="grid" x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" vector-effect="non-scaling-stroke"/>`).join('');
+  const spans = mergeSpans(marks).map(m => { const a = x(index(m.start)), b = x(index(m.end)); return `<rect class="mark" x="${a}" width="${Math.max(4, b - a)}" y="0" height="${H}"/>`; }).join('');
+  const path = segments(rows, val).map(run => run.map((i, k) => `${k ? 'L' : 'M'}${x(i).toFixed(1)},${y(values[i]).toFixed(1)}`).join('')).join('');
+  const labels = [hi, mid, lo].map(v => `<span style="top:${(y(v) / H * 100).toFixed(1)}%">${fmt(v, AXIS_DIGITS[key] ?? f.digits)}</span>`).join('');
+  const middle = rows[Math.floor((rows.length - 1) / 2)];
+  // Short axis labels: clock time up to a day, date for longer periods.
+  const tick = ms => rows.at(-1).receivedAt - rows[0].receivedAt > 86400000
+    ? new Date(ms).toLocaleDateString('sl-SI', { day: 'numeric', month: 'numeric' }) : clock(ms);
+  return {
+    x, y, values,
+    html: `<div class="plot">
+      <div class="ylabels" aria-hidden="true">${labels}</div>
+      <div class="area">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Graf: ${f.title}">${band}${grid}${spans}<path class="line" d="${path}" vector-effect="non-scaling-stroke"/></svg>
+        <div class="cursor" hidden><i></i></div>
+      </div>
+    </div>
+    <div class="axis"><span>${tick(rows[0].receivedAt)}</span><span>${tick(middle.receivedAt)}</span><span>${tick(rows.at(-1).receivedAt)}</span></div>`,
+  };
+}
+
+// One crosshair for every chart in a container: pointing at a time shows that time in all charts.
+function syncedHover(container) {
+  let rows = [], charts = [];
+  const readout = (c, i) => {
+    const v = c.values[i], unit = FIELDS[c.key].unit;
+    const when = i == null ? (rows.at(-1) === latest ? 'zdaj' : time(rows.at(-1).receivedAt)) : time(rows[i].receivedAt);
+    c.el.querySelector('.readout').innerHTML = `${fmt(i == null ? c.values.at(-1) : v, FIELDS[c.key].digits)}${unit ? ` ${unit}` : ''}<small>${when}</small>`;
+  };
+  const show = i => charts.forEach(c => {
+    const cursor = c.el.querySelector('.cursor'), dot = cursor.firstElementChild, v = c.values[i];
+    cursor.hidden = false;
+    cursor.style.left = `${(c.x(i) / W * 100).toFixed(2)}%`;
+    dot.hidden = !Number.isFinite(v);
+    if (Number.isFinite(v)) dot.style.top = `${(c.y(v) / H * 100).toFixed(2)}%`;
+    readout(c, i);
+  });
+  const hide = () => charts.forEach(c => { c.el.querySelector('.cursor').hidden = true; readout(c, null); });
+  container.addEventListener('pointermove', e => {
+    const p = e.target.closest('.area');
+    if (!p || !rows.length) return;
+    const r = p.getBoundingClientRect();
+    const frac = ((e.clientX - r.left) / r.width * W - PAD) / (W - 2 * PAD);
+    show(Math.round(Math.min(1, Math.max(0, frac)) * (rows.length - 1)));
+  });
+  container.addEventListener('pointerleave', hide);
+  return { set(newRows, newCharts) { rows = newRows; charts = newCharts; hide(); } };
 }
 
 const rows = buildDemoData(1);
@@ -71,18 +120,19 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
 
 // Everyone: notable events in plain words, newest first.
 const events = eventsInRange(detectEvents(rows, rules), latest.receivedAt, 24).slice(0, 6);
-const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 $('events').innerHTML = events.length
   ? events.map((ev, i) => `<li data-status="${ev.severity}"><button type="button" data-event="${i}">
       <b>${time(ev.start)}</b><em>${eventText(ev)}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span><i aria-hidden="true">›</i></button></li>`).join('')
   : '<li data-status="normal"><em>V zadnjih 24 urah ni bilo nič posebnega.</em></li>';
 
 // Event detail: what happened, when, and the measurement around it.
+const dialogHover = syncedHover($('event-body'));
 function openEvent(ev) {
   const f = FIELDS[ev.key], rule = rules[ev.key] ?? {};
   const unit = f.unit, digits = MAIN[ev.key].digits;
   const around = rows.filter(r => r.receivedAt >= ev.start - 2 * 3600000 && r.receivedAt <= ev.end + 2 * 3600000);
   const peak = rows.find(r => r.receivedAt === ev.peak);
+  const p = plot(around, ev.key, rule, [ev]);
   const why = ev.type === 'range'
     ? `Običajno območje je ${fmt(rule.min, digits)}–${fmt(rule.max, digits)} ${unit}.`
     : `V eni uri se je spremenilo za ${fmt(ev.magnitude, digits)} ${unit}. Opozorimo pri ${fmt(rule.change, digits)} ${unit}.`;
@@ -93,8 +143,9 @@ function openEvent(ev) {
       <div><dt>Vrhunec</dt><dd>${clock(ev.peak)} · ${fmt(peak?.[ev.key], digits)} ${unit}</dd></div>
     </dl>
     <p class="muted">${why}</p>
-    <div class="chart">${chart(around, ev.key, rule, ev)}</div>
-    <p class="muted">Modri pas = čas dogodka. Zeleni pas = običajno območje.</p>`;
+    <article class="chart ts"><h3>${LABEL[ev.key]}<span class="readout"></span></h3>${p.html}</article>
+    <p class="muted">Rumeni pas = čas dogodka. Zeleni pas = običajno območje.</p>`;
+  dialogHover.set(around, [{ key: ev.key, el: $('event-body').querySelector('.ts'), ...p }]);
   $('event-dialog').showModal();
   $('event-dialog').scrollTop = 0; // focus lands on Zapri at the bottom; keep the title in view
 }
@@ -137,17 +188,22 @@ function spectrum(range) {
 }
 
 // Expert: graphs for the main measurements, the spectrometer, and a full table, for the chosen period.
-const SAMPLE = fieldsForView('sample');
-const LINES = SAMPLE.filter(([, f]) => f.group !== 'spectrum');
-const unitText = unit => unit ? ` ${unit}` : '';
+// Same order as the cards on the Voda view.
+const LINES = ['temperature', 'turbidity', 'conductivity', 'fluorescenceRaw', 'fluorescence'];
+// Table columns: the charted measurements first (same order and names), then the 18 spectral channels.
+const SAMPLE = [...LINES.map(key => [key, FIELDS[key]]), ...fieldsForView('sample').filter(([key]) => !LINES.includes(key))];
+const allEvents = detectEvents(rows, rules);
+const graphsHover = syncedHover($('graphs'));
 let hours = 24;
 function drawData() {
   const range = selectRange(rows, hours);
-  $('graphs').innerHTML = LINES.map(([key, f]) => `<article class="chart">
-    <h3>${f.title}<span>${fmt(rowValue(latest, key), f.digits)}${unitText(f.unit)}</span></h3>
-    ${chart(range, key, rules[key])}</article>`).join('');
+  const from = range[0].receivedAt;
+  const plots = LINES.map(key => plot(range, key, rules[key], allEvents.filter(e => e.key === key && e.end >= from)));
+  $('graphs').innerHTML = LINES.map((key, i) => `<article class="chart ts">
+    <h3>${LABEL[key]}<span class="readout"></span></h3>${plots[i].html}</article>`).join('');
+  graphsHover.set(range, LINES.map((key, i) => ({ key, el: $('graphs').children[i], ...plots[i] })));
   $('spectrum').innerHTML = spectrum(range);
-  $('table-head').innerHTML = `<tr><th>Čas</th>${SAMPLE.map(([, f]) => `<th>${f.title}${f.unit ? `<br>${f.unit}` : ''}</th>`).join('')}</tr>`;
+  $('table-head').innerHTML = `<tr><th>Čas</th>${SAMPLE.map(([key, f]) => `<th>${LABEL[key] ?? f.title}${f.unit ? `<br>${f.unit}` : ''}</th>`).join('')}</tr>`;
   $('readings').innerHTML = range.slice().reverse().map(row =>
     `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
   $('table-count').textContent = `${range.length} meritev, najnovejše zgoraj.`;
