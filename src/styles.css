@@ -2,7 +2,7 @@
 :root {
   --bg: #f4f6f8; --ink: #14181f; --muted: #5a6472; --line: #e3e7ec; --card: #fff;
   --ok: #17663a; --ok-bg: #e2f5e9;
-  --warn: #8a5300; --warn-bg: #fff2d1;
+  --warn: #6e5a00; --warn-bg: #fbf3cd; --warn-dot: #e8b500; --bad-dot: #d93a2f; --ok-dot: #22a05a;
   --bad: #b0241b; --bad-bg: #fde4e1;
   --accent: #1f5fbf; --accent-bg: #e6eefb;
   --radius: 22px;
@@ -71,10 +71,15 @@ section > h2:first-child { margin-top: 4px; }
 
 /* Events */
 .events { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.events li { padding: 16px 18px; border-radius: var(--radius); }
+.events li, .events li[data-status] {
+  position: relative; padding: 16px 18px 16px 46px; border-radius: var(--radius);
+  background: var(--card); color: var(--ink); box-shadow: var(--shadow); font-weight: 600;
+}
+.events li::before { content: ''; position: absolute; left: 18px; top: 24px; width: 14px; height: 14px; border-radius: 50%; background: var(--ok-dot); }
+.events li[data-status="unusual"]::before { background: var(--warn-dot); }
+.events li[data-status="attention"]::before { background: var(--bad-dot); }
 .events li b { display: block; font-size: 18px; color: var(--muted); font-weight: 600; }
-.events li { font-weight: 600; }
-.events li span { display: block; width: fit-content; margin-top: 8px; padding: 2px 12px; border-radius: 999px; background: var(--card); font-size: 18px; font-weight: 700; }
+.events li span { display: block; width: fit-content; margin-top: 8px; padding: 2px 12px; border-radius: 999px; background: var(--bg); color: var(--muted); font-size: 18px; font-weight: 650; }
 
 /* Period switch: sticky segmented pill */
 .controls { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--line); }
@@ -161,3 +166,7 @@ footer { margin: 40px auto 0; max-width: 1040px; font-size: 16px; text-align: ce
   .heat svg { height: 432px; }
   .heat-axis { padding-left: 48px; }
 }
+
+/* Unusual: dark text, bright yellow icon (no muddy olive) */
+.status[data-status="unusual"] { color: var(--ink); }
+.status[data-status="unusual"] .icon { background: var(--warn-dot); -webkit-text-fill-color: var(--ink); }
