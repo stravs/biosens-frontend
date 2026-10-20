@@ -62,15 +62,20 @@ section > h2:first-child { margin-top: 4px; }
 .cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 16px; }
 .card { padding: 16px 18px; border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
 .card[data-status] { background: var(--card); }
+.card { display: flex; flex-direction: column; }
+.card .scale { margin-top: auto; padding-top: 10px; }
+.card.number .answer { font-size: 52px; line-height: 1; margin-top: 6px; letter-spacing: -0.03em; }
+.card.number .answer span { margin-left: 6px; font-size: 26px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+.card .trend { margin: auto 0 0; padding-top: 10px; font-size: 17px; color: var(--muted); }
+.card .trend b { color: var(--ink); }
 .card h3 { margin: 0; font-size: 18px; font-weight: 600; color: var(--muted); }
 .card .answer { margin: 2px 0 0; font-size: 34px; font-weight: 750; letter-spacing: -0.02em; line-height: 1.15; }
 .card[data-status="unusual"] .answer { color: var(--warn); }
 .card .measure { margin: 2px 0 0; font-size: 17px; color: var(--muted); }
-.scale { margin-top: 10px; }
 .scale .track { position: relative; height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--accent-bg), #b9cdee); }
 .scale i { position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--ink); border: 3px solid var(--card); box-shadow: var(--shadow); }
 .scale .ends { display: flex; justify-content: space-between; margin-top: 6px; font-size: 15px; color: var(--muted); }
-.card .word { display: inline-block; margin: 10px 0 0; padding: 2px 12px; border-radius: 999px; font-weight: 700; font-size: 18px; background: var(--warn-bg); }
+.card .word { align-self: flex-start; display: inline-block; margin: 10px 0 0; padding: 2px 12px; border-radius: 999px; font-weight: 700; font-size: 18px; background: var(--warn-bg); }
 
 /* Plain explanations */
 .explain { margin-top: 16px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }

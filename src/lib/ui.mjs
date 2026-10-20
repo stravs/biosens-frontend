@@ -50,9 +50,19 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
   const plain = describe(key, latest[key], rules[key]);
   const scale = plain.position == null ? '' : `<div class="scale" aria-hidden="true"><div class="track"><i style="left:${(plain.position * 100).toFixed(1)}%"></i></div>
       <div class="ends"><span>${plain.ends[0]}</span><span>${plain.ends[1]}</span></div></div>`;
+  if (plain.answer == null) {
+    // Number-only card (temperature): big value + change over the last hour.
+    const d = point.delta;
+    const trend = d == null ? '' : Math.abs(d) < 0.05 ? 'Enako kot pred eno uro'
+      : `<b>${d > 0 ? '↑' : '↓'} ${fmt(Math.abs(d), 1)} ${FIELDS[key].unit}</b> v zadnji uri`;
+    return `<div class="card number" data-status="${state}"><h3>${plain.question}</h3>
+    <p class="answer">${fmt(latest[key], digits)}<span>${FIELDS[key].unit}</span></p>
+    <p class="trend">${trend}</p>
+    ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
+  }
   return `<div class="card" data-status="${state}"><h3>${plain.question}</h3>
-    <p class="answer">${plain.answer ?? `${fmt(latest[key], digits)} ${FIELDS[key].unit}`}</p>
-    ${plain.answer == null ? '' : `<p class="measure">${name}: ${fmt(latest[key], digits)} ${FIELDS[key].unit}</p>`}
+    <p class="answer">${plain.answer}</p>
+    <p class="measure">${name}: ${fmt(latest[key], digits)} ${FIELDS[key].unit}</p>
     ${scale}
     ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
 }).join('');
