@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BioSens</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="ui.mjs"></script>
+</head>
+<body>
+  <nav class="views" aria-label="Pogled">
+    <button type="button" data-view="everyone">Kakšna je voda?</button>
+    <button type="button" data-view="expert">Podatki</button>
+    <button type="button" data-view="maintenance">Naprava</button>
+  </nav>
+
+  <main>
+    <section id="everyone">
+      <h1 id="status" class="status"></h1>
+      <p id="updated" class="muted"></p>
+      <div id="cards" class="cards"></div>
+    </section>
+
+    <section id="expert" hidden>
+      <h2>Graf</h2>
+      <div class="controls">
+        <select id="measure" aria-label="Meritev"></select>
+        <button type="button" data-hours="24">24 ur</button>
+        <button type="button" data-hours="168">7 dni</button>
+      </div>
+      <div id="chart" class="chart"></div>
+      <p class="muted">Zeleni pas = običajno območje.</p>
+
+      <h2>Posebnosti v zadnjih 24 urah</h2>
+      <ul id="events" class="list"></ul>
+
+      <h2>Zadnje meritve</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Čas</th><th>Temp. °C</th><th>Motnost NTU</th><th>Prevodnost µS/cm</th><th>Fluor. V</th></tr></thead>
+        <tbody id="readings"></tbody>
+      </table></div>
+      <button type="button" id="csv" class="big">Prenesi podatke (CSV, 7 dni)</button>
+    </section>
+
+    <section id="maintenance" hidden>
+      <h2>Stanje naprave</h2>
+      <dl id="device" class="facts"></dl>
+
+      <h2>Zadnji paketi</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Čas</th><th>RSSI</th><th>SNR</th></tr></thead>
+        <tbody id="packets"></tbody>
+      </table></div>
+    </section>
+  </main>
+
+  <footer class="muted">Prikaz uporablja simulirane podatke in izmišljene meje.</footer>
+</body>
+</html>
