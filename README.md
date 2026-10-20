@@ -1,14 +1,15 @@
 # BioSens frontend
 
-Preprosta stran z velikimi črkami. Brez gradnje in odvisnosti. **Vsi podatki so simulirani.**
+Preprosta Astro stran z velikimi črkami. **Vsi podatki so simulirani.**
 
 ## Zagon
 
 ```sh
-python3 -m http.server 8080 --bind 127.0.0.1 --directory frontend
+cd frontend
+npm install
+npm run dev        # astro dev --host → http://<ip>:4321
+npm run build      # statična stran v dist/
 ```
-
-Odprite http://localhost:8080.
 
 ## Trije pogledi
 
@@ -20,13 +21,15 @@ Meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 
 ## Datoteke
 
-- `ui.mjs` – stran
-- `app.mjs` – demo podatki in CSV
-- `monitoring.mjs` – ocena stanja in zaznavanje dogodkov
-- `demo-rules.mjs` – izmišljene meje
+- `src/pages/index.astro` – stran
+- `src/styles.css` – videz
+- `src/lib/ui.mjs` – izris pogledov
+- `src/lib/app.mjs` – demo podatki in CSV
+- `src/lib/monitoring.mjs` – ocena stanja in zaznavanje dogodkov
+- `src/lib/demo-rules.mjs` – izmišljene meje
 
 ## Testi
 
 ```sh
-cd frontend && node --test
+cd frontend && npm test
 ```
