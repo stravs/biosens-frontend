@@ -13,7 +13,7 @@ npm run build      # statična stran v dist/
 
 ## Trije pogledi
 
-- **Kakšna je voda?** – za vsakogar: en velik odgovor (v redu / nenavadno / pozor) in štiri kartice.
+- **Voda** – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
 - **Podatki** – za strokovnjaka: graf (24 ur / 7 dni), posebnosti, zadnje meritve, prenos CSV.
 - **Naprava** – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
 

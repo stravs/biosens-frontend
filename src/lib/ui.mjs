@@ -11,11 +11,10 @@ const MAIN = {
 };
 const STATUS = {
   normal: { text: 'OK', icon: '✓' },
-  unusual: { text: 'Nekatere vrednosti so nenavadne', icon: '!' },
-  attention: { text: 'Vrednosti so izven meja', icon: '!' },
+  unusual: { text: 'Nenavadno', icon: '!' },
   unknown: { text: 'Ni dovolj podatkov', icon: '?' },
 };
-const WORD = { attention: 'Pozor', unusual: 'Nenavadno' };
+const WORD = { unusual: 'Nenavadno' };
 
 const $ = id => document.getElementById(id);
 const fmt = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '–';

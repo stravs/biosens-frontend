@@ -5,14 +5,11 @@ export const INTERVAL_MS = 5 * 60 * 1000;
 export function validateRules(rules) {
   for (const key of MAIN_FIELDS) {
     const rule = rules[key] || {};
-    for (const name of ['min', 'max', 'attentionMin', 'attentionMax', 'change']) {
+    for (const name of ['min', 'max', 'change']) {
       if (rule[name] != null && !Number.isFinite(rule[name])) throw new Error('Vnesite končna števila ali pustite polja prazna.');
     }
     if ((rule.min != null) !== (rule.max != null)) throw new Error('Za običajno območje vnesite obe meji.');
     if (rule.min != null && rule.min >= rule.max) throw new Error('Spodnja meja mora biti manjša od zgornje.');
-    if (rule.attentionMin != null && rule.attentionMax != null && rule.attentionMin >= rule.attentionMax) throw new Error('Spodnja opozorilna meja mora biti manjša od zgornje.');
-    if (rule.min != null && rule.attentionMin != null && rule.attentionMin > rule.min) throw new Error('Spodnja opozorilna meja mora biti pod običajnim območjem ali na njegovi meji.');
-    if (rule.max != null && rule.attentionMax != null && rule.attentionMax < rule.max) throw new Error('Zgornja opozorilna meja mora biti nad običajnim območjem ali na njegovi meji.');
     if (rule.change != null && rule.change <= 0) throw new Error('Prag spremembe mora biti večji od nič.');
   }
   return rules;
@@ -33,9 +30,7 @@ export function assessPoint(rows, index, key, rule = {}) {
   const delta = hourChange(rows, index, key);
   let severity = null, boundary = null;
   if (Number.isFinite(value)) {
-    if (rule.attentionMin != null && value < rule.attentionMin) { severity = 'attention'; boundary = rule.attentionMin; }
-    else if (rule.attentionMax != null && value > rule.attentionMax) { severity = 'attention'; boundary = rule.attentionMax; }
-    else if (rule.min != null && value < rule.min) { severity = 'unusual'; boundary = rule.min; }
+    if (rule.min != null && value < rule.min) { severity = 'unusual'; boundary = rule.min; }
     else if (rule.max != null && value > rule.max) { severity = 'unusual'; boundary = rule.max; }
   }
   return { severity, boundary, delta, magnitude: boundary == null ? null : Math.abs(value - boundary),
@@ -47,8 +42,7 @@ export function currentStatus(rows, rules = {}) {
   const latest = rows.at(-1);
   const points = MAIN_FIELDS.map(key => assessPoint(rows, rows.length - 1, key, rules[key]));
   const covered = MAIN_FIELDS.filter(key => rules[key]?.min != null && rules[key]?.max != null && Number.isFinite(latest[key])).length;
-  const status = points.some(point => point.severity === 'attention') ? 'attention'
-    : points.some(point => point.severity === 'unusual' || point.changed) ? 'unusual'
+  const status = points.some(point => point.severity === 'unusual' || point.changed) ? 'unusual'
     : covered === MAIN_FIELDS.length ? 'normal' : 'unknown';
   return { status, covered };
 }

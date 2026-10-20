@@ -21,12 +21,11 @@ test('normal requires all four reference ranges; partial coverage stays unknown'
   assert.equal(currentStatus(rows, fullRules()).status, 'unknown');
 });
 
-test('configured deviations and attention limits have precedence; equality stays in range', () => {
-  const rules = fullRules(); rules.temperature = { min: 0, max: 20, attentionMax: 30, attentionMin: -10 };
+test('values outside the normal range are unusual; equality stays in range', () => {
+  const rules = fullRules(); rules.temperature = { min: 0, max: 20 };
   assert.equal(currentStatus(series([20]), rules).status, 'normal');
   assert.equal(currentStatus(series([21]), rules).status, 'unusual');
-  assert.equal(currentStatus(series([31]), rules).status, 'attention');
-  assert.equal(currentStatus(series([-11]), rules).status, 'attention');
+  assert.equal(currentStatus(series([-11]), rules).status, 'unusual');
   assert.equal(assessPoint(series([30]), 0, 'temperature', rules.temperature).severity, 'unusual');
 });
 
@@ -87,11 +86,11 @@ test('missing values interrupt events rather than count as valid readings', () =
   assert.equal(events.find(event => event.interrupted).end, base);
 });
 
-test('severity and direction changes form separate chronological events', () => {
-  const events = detectEvents(series([10, 21, 31, -1, 10]), { temperature: { min: 0, max: 20, attentionMax: 30 } });
-  assert.equal(events.length, 3);
+test('direction changes form separate chronological events', () => {
+  const events = detectEvents(series([10, 21, 31, -1, 10]), { temperature: { min: 0, max: 20 } });
+  assert.equal(events.length, 2);
   assert.equal(events[0].direction, -1);
-  assert.equal(events[1].severity, 'attention');
+  assert.equal(events[1].direction, 1);
   assert.ok(events[0].start > events[1].start);
 });
 
@@ -102,10 +101,9 @@ test('range filtering preserves the actual onset of events overlapping the windo
 });
 
 test('rule validation rejects incomplete, non-finite, inverted and nested-invalid limits', () => {
-  for (const rule of [{ min: 1 }, { min: 2, max: 1 }, { change: 0 }, { change: -1 }, { change: Infinity },
-    { min: 0, max: 20, attentionMin: 1 }, { min: 0, max: 20, attentionMax: 19 }, { attentionMin: 30, attentionMax: 10 }]) {
+  for (const rule of [{ min: 1 }, { min: 2, max: 1 }, { change: 0 }, { change: -1 }, { change: Infinity }]) {
     assert.throws(() => validateRules({ temperature: rule }));
   }
   assert.doesNotThrow(() => validateRules({}));
-  assert.doesNotThrow(() => validateRules({ temperature: { min: 0, max: 20, attentionMin: 0, attentionMax: 20, change: 1 } }));
+  assert.doesNotThrow(() => validateRules({ temperature: { min: 0, max: 20, change: 1 } }));
 });
