@@ -1,5 +1,5 @@
 // Simple page: three views (everyone / expert / maintenance). All data is simulated.
-import { FIELDS, buildDemoData, selectRange, toCsv } from './app.mjs';
+import { FIELDS, buildDemoData, fieldsForView, rowValue, selectRange, toCsv } from './app.mjs';
 import { assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 import { createDemoRules } from './demo-rules.mjs';
 
@@ -19,18 +19,18 @@ const WORD = { attention: 'Pozor', unusual: 'Nenavadno', normal: 'V redu' };
 
 const $ = id => document.getElementById(id);
 const fmt = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '–';
-const time = ms => new Date(ms).toLocaleString('sl-SI', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+const time = ms => new Date(ms).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 function chart(rows, key, rule = {}) {
-  const w = 800, h = 260, pad = 12;
-  const values = rows.map(row => row[key]);
+  const w = 800, h = 200, pad = 12;
+  const values = rows.map(row => rowValue(row, key));
   const lo = Math.min(...values, rule.min ?? Infinity), hi = Math.max(...values, rule.max ?? -Infinity);
   const x = i => pad + i / (rows.length - 1) * (w - 2 * pad);
   const y = v => h - pad - (v - lo) / (hi - lo || 1) * (h - 2 * pad);
   const band = rule.min != null ? `<rect x="0" width="${w}" y="${y(rule.max)}" height="${y(rule.min) - y(rule.max)}" class="band"/>` : '';
   const path = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
   const digits = FIELDS[key].digits, unit = FIELDS[key].unit;
-  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Graf: ${MAIN[key].name}">${band}<path d="${path}" class="line" vector-effect="non-scaling-stroke"/></svg>
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Graf: ${FIELDS[key].title}">${band}<path d="${path}" class="line" vector-effect="non-scaling-stroke"/></svg>
     <div class="axis"><span>${time(rows[0].receivedAt)}</span><span>${time(rows.at(-1).receivedAt)}</span></div>
     <p class="range">Najnižje ${fmt(Math.min(...values), digits)} ${unit} · najvišje ${fmt(Math.max(...values), digits)} ${unit}</p>`;
 }
@@ -51,23 +51,28 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
     <p class="word">${WORD[state]}</p></div>`;
 }).join('');
 
-// Expert: chart, events, latest readings, CSV.
-let chartKey = 'temperature', hours = 24;
-function drawChart() {
-  $('chart').innerHTML = chart(selectRange(rows, hours), chartKey, rules[chartKey]);
+// Expert: a graph for every sample measurement + full table, for the chosen period.
+const SAMPLE = fieldsForView('sample');
+const unitText = unit => unit ? ` ${unit}` : '';
+let hours = 24;
+function drawData() {
+  const range = selectRange(rows, hours);
+  $('graphs').innerHTML = SAMPLE.map(([key, f]) => `<article class="chart">
+    <h3>${f.title}<span>${fmt(rowValue(latest, key), f.digits)}${unitText(f.unit)}</span></h3>
+    ${chart(range, key, rules[key])}</article>`).join('');
+  $('table-head').innerHTML = `<tr><th>Čas</th>${SAMPLE.map(([, f]) => `<th>${f.title}${f.unit ? `<br>${f.unit}` : ''}</th>`).join('')}</tr>`;
+  $('readings').innerHTML = range.slice().reverse().map(row =>
+    `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
+  $('table-count').textContent = `${range.length} meritev, najnovejše zgoraj.`;
   document.querySelectorAll('[data-hours]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hours === hours)));
 }
-$('measure').innerHTML = Object.entries(MAIN).map(([key, { name }]) => `<option value="${key}">${name} (${FIELDS[key].unit})</option>`).join('');
-$('measure').addEventListener('change', e => { chartKey = e.target.value; drawChart(); });
-document.querySelectorAll('[data-hours]').forEach(b => b.addEventListener('click', () => { hours = +b.dataset.hours; drawChart(); }));
-drawChart();
+document.querySelectorAll('[data-hours]').forEach(b => b.addEventListener('click', () => { hours = +b.dataset.hours; drawData(); }));
+drawData();
 
 const events = eventsInRange(detectEvents(rows, rules), latest.receivedAt, 24).slice(0, 6);
 $('events').innerHTML = events.length
   ? events.map(ev => `<li>${time(ev.start)} · ${MAIN[ev.key].name}: ${ev.type === 'range' ? 'izven območja' : 'hitra sprememba'}${ev.ongoing ? ' <b>(še traja)</b>' : ''}</li>`).join('')
   : '<li>V zadnjih 24 urah ni bilo posebnosti.</li>';
-$('readings').innerHTML = rows.slice(-6).reverse().map(row =>
-  `<tr><td>${time(row.receivedAt)}</td>${Object.keys(MAIN).map(key => `<td>${fmt(row[key], FIELDS[key].digits)}</td>`).join('')}</tr>`).join('');
 $('csv').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob(['﻿', toCsv(rows, 'sample')], { type: 'text/csv;charset=utf-8' }));
   const link = Object.assign(document.createElement('a'), { href: url, download: 'biosens-7dni.csv' });

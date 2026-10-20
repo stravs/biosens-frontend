@@ -53,7 +53,7 @@ export function selectRange(rows, hours) {
   return rows.filter(row => row.receivedAt >= cutoff);
 }
 
-function rowValue(row, key) {
+export function rowValue(row, key) {
   return FIELDS[key].group === 'spectrum' ? row.spectrum[FIELDS[key].channelIndex]?.value : row[key];
 }
 

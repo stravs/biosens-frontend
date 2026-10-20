@@ -24,21 +24,22 @@ import '../styles.css';
     </section>
 
     <section id="expert" hidden>
-      <h2>Graf</h2>
-      <div class="controls">
-        <select id="measure" aria-label="Meritev"></select>
-        <button type="button" data-hours="24">24 ur</button>
-        <button type="button" data-hours="168">7 dni</button>
+      <div class="controls sticky" role="group" aria-label="Obdobje">
+        <button type="button" data-hours="24">Zadnjih 24 ur</button>
+        <button type="button" data-hours="168">Zadnjih 7 dni</button>
       </div>
-      <div id="chart" class="chart"></div>
-      <p class="muted">Zeleni pas = običajno območje.</p>
 
       <h2>Posebnosti v zadnjih 24 urah</h2>
       <ul id="events" class="list"></ul>
 
-      <h2>Zadnje meritve</h2>
-      <div class="scroll"><table>
-        <thead><tr><th>Čas</th><th>Temp. °C</th><th>Motnost NTU</th><th>Prevodnost µS/cm</th><th>Fluor. V</th></tr></thead>
+      <h2>Grafi</h2>
+      <p class="muted">Velika številka = zadnja meritev. Zeleni pas = običajno območje.</p>
+      <div id="graphs" class="graphs"></div>
+
+      <h2>Vse meritve</h2>
+      <p id="table-count" class="muted"></p>
+      <div class="scroll table-box" tabindex="0"><table>
+        <thead id="table-head"></thead>
         <tbody id="readings"></tbody>
       </table></div>
       <button type="button" id="csv" class="big">Prenesi podatke (CSV, 7 dni)</button>
