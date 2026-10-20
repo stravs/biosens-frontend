@@ -10,7 +10,7 @@ const MAIN = {
   fluorescenceRaw: { name: 'Fluorescenca', digits: 2 },
 };
 const STATUS = {
-  normal: { text: 'Vrednosti so normalne', icon: '✓' },
+  normal: { text: 'OK', icon: '✓' },
   unusual: { text: 'Nekatere vrednosti so nenavadne', icon: '!' },
   attention: { text: 'Vrednosti so izven meja', icon: '!' },
   unknown: { text: 'Ni dovolj podatkov', icon: '?' },
