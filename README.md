@@ -33,3 +33,19 @@ Meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 ```sh
 cd frontend && npm test
 ```
+
+## Pomen meritev za laike
+
+Pogled **Voda** vsako meritev prevede v vprašanje in preprost odgovor (`src/lib/plain.mjs`):
+
+| Meritev | Vprašanje | Odgovori | Vir referenčnih vrednosti |
+|---|---|---|---|
+| Temperatura | Kako topla je voda? | mrzla < 8 °C, hladna < 16, sveža < 22, topla | vsakdanji občutek |
+| Motnost | Kako bistra je voda? | bistra < 1 NTU, rahlo motna < 5, motna < 50, zelo motna | smernice SZO za pitno vodo (5 NTU, idealno < 1) |
+| Prevodnost | Koliko soli je v vodi? | malo < 100 µS/cm, zmerno < 800, veliko < 2000, zelo veliko | tipične vrednosti: destilirana ~1, pipa/reke 50–800, morje ~50.000 |
+| Fluorescenca | Ali so v vodi znaki odplak? | manj / kot običajno / več kot običajno (glede na nastavljeno območje) | poročilo WaQuMoS: UV fluorescenca, podobna triptofanu, kot kazalnik fekalnega onesnaženja (E. coli) |
+
+Fluorescenca je v voltih in ni umerjena, zato se primerja samo z običajnim območjem naprave. Ne šteje bakterij.
+Spektrometer bi po poročilu lahko prepoznal alge (680 nm), mulj in železo (350–400 nm), vendar to še ni umerjeno, zato ga pogled Voda ne prikazuje.
+
+Viri: poročilo WaQuMoS (TLF, alge, mulj, železo); [WEDC: merjenje motnosti](https://wedc-knowledge.lboro.ac.uk/resources/booklets/G031-Measuring-turbidity-in-water-supplies-online.pdf); [Atlas Scientific: prevodnost vode](https://atlas-scientific.com/blog/water-conductivity-range/); [BGS: TLF in fekalno onesnaženje](https://www.bgs.ac.uk/news/real-time-detection-of-faecally-contaminated-drinking-water/).

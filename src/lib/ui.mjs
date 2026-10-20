@@ -2,6 +2,7 @@
 import { FIELDS, buildDemoData, fieldsForView, rowValue, selectRange, toCsv } from './app.mjs';
 import { assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 import { createDemoRules } from './demo-rules.mjs';
+import { describe, eventText } from './plain.mjs';
 
 const MAIN = {
   temperature: { name: 'Temperatura', digits: 1 },
@@ -41,12 +42,18 @@ const latest = rows.at(-1);
 // Everyone: one big answer + four cards.
 const { status } = currentStatus(rows, rules);
 $('status').dataset.status = status;
-$('status').innerHTML = `<span class="icon" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}`;
-$('updated').textContent = `Zadnja meritev: ${time(latest.receivedAt)}`;
+$('status').innerHTML = `<span class="icon" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}
+  <small class="when">Zadnja meritev<br>${time(latest.receivedAt)}</small>`;
 $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
-  const state = assessPoint(rows, rows.length - 1, key, rules[key]).severity ?? 'normal';
-  return `<div class="card" data-status="${state}"><h3>${name}</h3>
-    <p class="value">${fmt(latest[key], digits)} <small>${FIELDS[key].unit}</small></p>
+  const point = assessPoint(rows, rows.length - 1, key, rules[key]);
+  const state = point.severity || point.changed ? 'unusual' : 'normal';
+  const plain = describe(key, latest[key], rules[key]);
+  const scale = plain.position == null ? '' : `<div class="scale" aria-hidden="true"><div class="track"><i style="left:${(plain.position * 100).toFixed(1)}%"></i></div>
+      <div class="ends"><span>${plain.ends[0]}</span><span>${plain.ends[1]}</span></div></div>`;
+  return `<div class="card" data-status="${state}"><h3>${plain.question}</h3>
+    <p class="answer">${plain.answer}</p>
+    <p class="measure">${name}: ${fmt(latest[key], digits)} ${FIELDS[key].unit}</p>
+    ${scale}
     ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
 }).join('');
 
@@ -55,9 +62,7 @@ const events = eventsInRange(detectEvents(rows, rules), latest.receivedAt, 24).s
 const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 $('events').innerHTML = events.length
   ? events.map(ev => {
-    const name = MAIN[ev.key].name, up = ev.direction > 0;
-    const what = ev.type === 'range' ? `${name} je bila ${up ? 'previsoka' : 'prenizka'}` : `${name} se je hitro ${up ? 'zvišala' : 'znižala'}`;
-    return `<li data-status="${ev.severity}"><b>${time(ev.start)}</b><em>${what}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span></li>`;
+    return `<li data-status="${ev.severity}"><b>${time(ev.start)}</b><em>${eventText(ev)}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span></li>`;
   }).join('')
   : '<li data-status="normal"><em>V zadnjih 24 urah ni bilo nič posebnega.</em></li>';
 
