@@ -196,6 +196,7 @@ tr:last-child td { border-bottom: 0; }
 .facts [data-status="normal"] dd { color: var(--ok); }
 .facts [data-status="unusual"] dd { color: var(--warn); }
 .facts [data-status="attention"] dd { color: var(--bad); }
+#maintenance { max-width: 760px; margin: 0 auto; }
 #maintenance .scroll { border-radius: var(--radius); box-shadow: var(--shadow); }
 
 footer { margin: 40px auto 0; font-size: 16px; text-align: center; }
