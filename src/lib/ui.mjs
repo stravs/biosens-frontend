@@ -17,9 +17,9 @@ const STATUS = {
   unknown: { text: 'Ni dovolj podatkov', icon: '?' },
 };
 const WORD = { unusual: 'Nenavadno' };
-// Chart names: same words as the Voda cards, technical name second.
-const LABEL = { temperature: 'Temperatura', turbidity: 'Bistrost · motnost', conductivity: 'Minerali · prevodnost EC25',
-  fluorescenceRaw: 'Organsko onesnaženje · fluorescenca', fluorescence: 'Kalibrirana fluorescenca' };
+// Chart and table names on Podatki: plain measurement names.
+const LABEL = { temperature: 'Temperatura', turbidity: 'Motnost', conductivity: 'Prevodnost',
+  fluorescenceRaw: 'Fluorescenca', fluorescence: 'Umerjena fluorescenca' };
 const AXIS_DIGITS = { temperature: 1, turbidity: 1, conductivity: 0, fluorescenceRaw: 2, fluorescence: 1 };
 
 const $ = id => document.getElementById(id);
