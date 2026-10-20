@@ -43,11 +43,31 @@ import '../styles.css';
     </section>
 
     <section id="expert" hidden>
-      <div class="controls sticky" role="group" aria-label="Obdobje">
-        <button type="button" data-hours="6">6 ur</button>
-        <button type="button" data-hours="24">24 ur</button>
-        <button type="button" data-hours="168">7 dni</button>
+      <div class="timebar sticky" role="group" aria-label="Časovno obdobje">
+        <button type="button" id="t-back" class="tb-icon" aria-label="Nazaj v času" title="Nazaj v času">‹</button>
+        <div class="tp">
+          <button type="button" id="t-open" class="tp-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="t-pop">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span class="tp-text"><b id="t-label"></b><small id="t-exact"></small></span>
+            <span class="tp-caret" aria-hidden="true">▾</span>
+          </button>
+          <div id="t-pop" class="tp-pop" role="dialog" aria-label="Izberi časovno obdobje" hidden>
+            <ul id="t-presets" class="tp-presets"></ul>
+            <form id="t-custom" class="tp-custom">
+              <p>Po meri</p>
+              <label>Od <input type="datetime-local" id="t-from" required></label>
+              <label>Do <input type="datetime-local" id="t-to" required></label>
+              <button type="submit" class="big">Prikaži</button>
+              <p id="t-error" class="tp-error" role="alert"></p>
+            </form>
+          </div>
+        </div>
+        <button type="button" id="t-fwd" class="tb-icon" aria-label="Naprej v času" title="Naprej v času">›</button>
+        <button type="button" id="t-zoom" class="tb-icon" aria-label="Oddalji: dvakrat daljše obdobje" title="Oddalji">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M7.5 10.5h6"/></svg>
+        </button>
       </div>
+      <p class="muted small tb-hint">Namig: z miško povlecite čez graf, da povečate izbrani del. Časi so lokalni.</p>
 
       <h2>Grafi</h2>
       <p class="legend-row"><span><i class="sw band"></i>Običajno območje</span><span><i class="sw mark"></i>Posebni dogodek</span><span class="muted">Z miško ali prstom pokažite čas – vrednosti se pokažejo v vseh grafih.</span></p>
@@ -66,7 +86,7 @@ import '../styles.css';
         <thead id="table-head"></thead>
         <tbody id="readings"></tbody>
       </table></div>
-      <button type="button" id="csv" class="big">Prenesi podatke (CSV, 7 dni)</button>
+      <button type="button" id="csv" class="big">Prenesi izbrano obdobje (CSV)</button>
     </section>
 
     <section id="maintenance" hidden>

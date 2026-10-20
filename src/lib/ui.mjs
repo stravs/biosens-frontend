@@ -1,10 +1,11 @@
 // Simple page: three views (everyone / expert / maintenance). All data is simulated.
-import { FIELDS, buildDemoData, fieldsForView, rowValue, selectRange, toCsv } from './app.mjs';
+import { FIELDS, buildDemoData, fieldsForView, rowValue, toCsv } from './app.mjs';
 import { assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 import { createDemoRules } from './demo-rules.mjs';
 import { describe, eventText } from './plain.mjs';
 import { mergeSpans, segments, ticks } from './series.mjs';
 import { indicators, transmission, wavelengthColor } from './spectrum.mjs';
+import { DEFAULT, PRESETS, clamp, fromInputValue, fromQuery, resolve, shift, snapToPreset, toInputValue, toQuery, zoomOut } from './timerange.mjs';
 
 const MAIN = {
   temperature: { name: 'Temperatura', digits: 1 },
@@ -54,6 +55,7 @@ function plot(rows, key, rule = {}, marks = [], meta = {}) {
       <div class="ylabels" aria-hidden="true">${labels}</div>
       <div class="area">
         <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Graf: ${f.title}">${band}${grid}${spans}<path class="line" d="${path}" vector-effect="non-scaling-stroke"/></svg>
+        <div class="sel" hidden></div>
         <div class="cursor" hidden><i></i></div>
       </div>
     </div>`,
@@ -63,8 +65,9 @@ function plot(rows, key, rule = {}, marks = [], meta = {}) {
 
 // One crosshair for every chart in a container: pointing at a time shows that time in all charts.
 // With timeEl, the time is shown once there instead of under every value.
-function syncedHover(container, timeEl = null) {
-  let rows = [], charts = [];
+// With onSelect, dragging across a chart with the mouse selects a time range (zoom in), as in Grafana.
+function syncedHover(container, timeEl = null, onSelect = null) {
+  let rows = [], charts = [], drag = null;
   const readout = (c, i) => {
     const v = c.values[i], unit = c.unit;
     const when = i == null ? (rows.at(-1) === latest ? 'zdaj' : time(rows.at(-1).receivedAt)) : time(rows[i].receivedAt);
@@ -80,14 +83,39 @@ function syncedHover(container, timeEl = null) {
     readout(c, i);
   });
   const hide = () => charts.forEach(c => { c.el.querySelector('.cursor').hidden = true; readout(c, null); });
+  const indexAt = (e, area) => {
+    const r = area.getBoundingClientRect();
+    const frac = ((e.clientX - r.left) / r.width * W - PAD) / (W - 2 * PAD);
+    return Math.round(Math.min(1, Math.max(0, frac)) * (rows.length - 1));
+  };
+  const selection = (a, b) => charts.forEach(c => {
+    const s = c.el.querySelector('.sel');
+    s.hidden = a == null;
+    if (a != null) { s.style.left = `${c.x(Math.min(a, b)) / W * 100}%`; s.style.width = `${Math.abs(c.x(b) - c.x(a)) / W * 100}%`; }
+  });
   container.addEventListener('pointermove', e => {
     const p = e.target.closest('.area');
     if (!p || !rows.length) return;
-    const r = p.getBoundingClientRect();
-    const frac = ((e.clientX - r.left) / r.width * W - PAD) / (W - 2 * PAD);
-    show(Math.round(Math.min(1, Math.max(0, frac)) * (rows.length - 1)));
+    const i = indexAt(e, p);
+    show(i);
+    if (drag) { drag.i = i; if (Math.abs(e.clientX - drag.x) > 6) selection(drag.start, i); }
   });
-  container.addEventListener('pointerleave', hide);
+  container.addEventListener('pointerleave', () => { if (!drag) hide(); });
+  if (onSelect) {
+    container.addEventListener('pointerdown', e => {
+      const p = e.target.closest('.area');
+      if (!p || e.pointerType !== 'mouse' || e.button !== 0) return;
+      e.preventDefault();
+      drag = { start: indexAt(e, p), i: indexAt(e, p), x: e.clientX };
+    });
+    window.addEventListener('pointerup', e => {
+      if (!drag) return;
+      const { start, i, x } = drag;
+      drag = null;
+      selection(null);
+      if (Math.abs(e.clientX - x) > 6 && start !== i) onSelect(rows[Math.min(start, i)].receivedAt, rows[Math.max(start, i)].receivedAt);
+    });
+  }
   return { set(newRows, newCharts) { rows = newRows; charts = newCharts; hide(); } };
 }
 
@@ -181,7 +209,7 @@ function spectrumCard(range) {
   // Colour strip: one 20 nm wide band per channel (the AS7265x filter width), in the colour of that light.
   const strip = now.map(c => `<i style="left:${nmX(c.wavelength - 10)}%;width:${nmX(c.wavelength + 10) - nmX(c.wavelength - 10)}%;background:${wavelengthColor(c.wavelength)}"></i>`).join('');
   const ticksNm = [400, 500, 600, 700, 800, 900].map(nm => `<span style="left:${nmX(nm)}%">${nm}</span>`).join('');
-  const earlier = hours === 24 ? 'Pred 24 urami' : hours === 6 ? 'Pred 6 urami' : 'Pred 7 dnevi';
+  const earlier = `Na začetku (${time(range[0].receivedAt)})`;
   return `<h3>Koliko svetlobe pride skozi vodo</h3>
     <p class="legend"><span><span class="key"></span> Zdaj</span><span><span class="key then"></span> ${earlier}</span><span><span class="key ref"></span> Čista voda = 100 %</span></p>
     <div class="plot spec-plot">
@@ -220,20 +248,45 @@ const LINES = ['temperature', 'turbidity', 'conductivity', 'fluorescenceRaw', 'f
 // Table columns: the charted measurements first (same order and names), then the 18 spectral channels.
 const SAMPLE = [...LINES.map(key => [key, FIELDS[key]]), ...fieldsForView('sample').filter(([key]) => !LINES.includes(key))];
 const allEvents = detectEvents(rows, rules);
-const graphsHover = syncedHover($('graphs'), $('stack-time'));
-const specHover = syncedHover($('spec-graphs'), $('spec-time'));
-let hours = 24;
+const bounds = { start: rows[0].receivedAt, end: latest.receivedAt };
+const zoomTo = (from, to) => setRange({ from, to });
+const graphsHover = syncedHover($('graphs'), $('stack-time'), zoomTo);
+const specHover = syncedHover($('spec-graphs'), $('spec-time'), zoomTo);
+// Time range: one control above everything; charts, spectrometer, table and CSV all follow it.
+const urlRange = fromQuery(location.search);
+let current = resolve(urlRange ?? DEFAULT, bounds);
+const inRange = list => list.filter(r => r.receivedAt >= current.from && r.receivedAt <= current.to);
+function setRange(state) {
+  current = resolve(state.preset ? state : snapToPreset(clamp(state, bounds), bounds), bounds);
+  try { history.replaceState(null, '', `?${toQuery(current)}`); } catch {}
+  drawData();
+}
+function drawTimeBar() {
+  const preset = PRESETS.find(p => p.id === current.preset);
+  $('t-label').textContent = preset ? preset.label : 'Izbrano obdobje';
+  $('t-exact').textContent = `${time(current.from)} – ${time(current.to)}`;
+  $('t-back').disabled = current.from <= bounds.start;
+  $('t-fwd').disabled = current.to >= bounds.end;
+  $('t-zoom').disabled = current.from <= bounds.start && current.to >= bounds.end;
+  $('t-presets').innerHTML = PRESETS.map(p => `<li><button type="button" data-preset="${p.id}" aria-pressed="${p.id === current.preset}">
+    <span aria-hidden="true">${p.id === current.preset ? '✓' : ''}</span>${p.label}</button></li>`).join('');
+  $('t-from').value = toInputValue(current.from);
+  $('t-to').value = toInputValue(current.to);
+  $('t-from').min = $('t-to').min = toInputValue(bounds.start);
+  $('t-from').max = $('t-to').max = toInputValue(bounds.end);
+}
 function drawData() {
-  const range = selectRange(rows, hours);
-  const from = range[0].receivedAt;
-  const plots = LINES.map(key => plot(range, key, rules[key], allEvents.filter(e => e.key === key && e.end >= from)));
+  const range = inRange(rows);
+  const from = range[0].receivedAt, to = range.at(-1).receivedAt;
+  drawTimeBar();
+  const plots = LINES.map(key => plot(range, key, rules[key], allEvents.filter(e => e.key === key && e.end >= from && e.start <= to)));
   // One card, rows touching, one time axis at the bottom: the pointer line runs through every row.
   $('graphs').innerHTML = LINES.map((key, i) => `<div class="ts row">
     <h3>${LABEL[key]}<span class="readout"></span></h3>${plots[i].html}</div>`).join('') + plots[0].axis;
   graphsHover.set(range, LINES.map((key, i) => ({ key, el: $('graphs').children[i], ...plots[i] })));
   $('spectrum').innerHTML = spectrumCard(range);
   $('spec-heat').innerHTML = heatmap(range);
-  const specRange = selectRange(specRows, hours);
+  const specRange = inRange(specRows);
   const specPlots = SPEC.map(s => plot(specRange, s.key, {}, [], { value: r => r[s.key], title: s.title, unit: '%', digits: s.digits, axisDigits: s.digits }));
   $('spec-graphs').innerHTML = SPEC.map((s, i) => `<div class="ts row">
     <h3>${s.title}<small class="hint">${s.hint}</small><span class="readout"></span></h3>${specPlots[i].html}</div>`).join('') + specPlots[0].axis;
@@ -242,14 +295,40 @@ function drawData() {
   $('readings').innerHTML = range.slice().reverse().map(row =>
     `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
   $('table-count').textContent = `${range.length} meritev, najnovejše zgoraj.`;
-  document.querySelectorAll('[data-hours]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hours === hours)));
 }
-document.querySelectorAll('[data-hours]').forEach(b => b.addEventListener('click', () => { hours = +b.dataset.hours; drawData(); }));
+
+// Time picker popover: presets as rows, custom range below a hairline.
+const pop = $('t-pop');
+function openPicker(open) {
+  pop.hidden = !open;
+  $('t-open').setAttribute('aria-expanded', String(open));
+  $('t-error').textContent = '';
+  if (open) pop.querySelector('[aria-pressed="true"], button')?.focus();
+}
+$('t-open').addEventListener('click', () => openPicker(pop.hidden));
+$('t-presets').addEventListener('click', e => {
+  const b = e.target.closest('[data-preset]');
+  if (b) { setRange({ preset: b.dataset.preset }); openPicker(false); $('t-open').focus(); }
+});
+$('t-custom').addEventListener('submit', e => {
+  e.preventDefault();
+  const from = fromInputValue($('t-from').value), to = fromInputValue($('t-to').value);
+  if (!Number.isFinite(from) || !Number.isFinite(to)) { $('t-error').textContent = 'Vnesite začetek in konec.'; return; }
+  if (from >= to) { $('t-error').textContent = 'Začetek mora biti pred koncem.'; return; }
+  setRange({ from, to });
+  openPicker(false);
+});
+document.addEventListener('pointerdown', e => { if (!pop.hidden && !e.target.closest('.tp')) openPicker(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pop.hidden) { openPicker(false); $('t-open').focus(); } });
+$('t-back').addEventListener('click', () => setRange(shift(current, -1, bounds)));
+$('t-fwd').addEventListener('click', () => setRange(shift(current, 1, bounds)));
+$('t-zoom').addEventListener('click', () => setRange(zoomOut(current, bounds)));
 drawData();
 
 $('csv').addEventListener('click', () => {
-  const url = URL.createObjectURL(new Blob(['﻿', toCsv(rows, 'sample')], { type: 'text/csv;charset=utf-8' }));
-  const link = Object.assign(document.createElement('a'), { href: url, download: 'biosens-7dni.csv' });
+  const url = URL.createObjectURL(new Blob(['\ufeff', toCsv(inRange(rows), 'sample')], { type: 'text/csv;charset=utf-8' }));
+  const stamp = ms => toInputValue(ms).replace('T', '_').replace(':', '');
+  const link = Object.assign(document.createElement('a'), { href: url, download: `biosens_${stamp(current.from)}_${stamp(current.to)}.csv` });
   document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
@@ -277,4 +356,5 @@ function show(name) {
 buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
 let saved = null;
 try { saved = localStorage.getItem('view'); } catch {}
-show(buttons.some(b => b.dataset.view === saved) ? saved : 'everyone');
+// A shared link with a time range opens straight on Podatki.
+show(urlRange ? 'expert' : buttons.some(b => b.dataset.view === saved) ? saved : 'everyone');

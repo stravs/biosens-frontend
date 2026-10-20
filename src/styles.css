@@ -119,9 +119,54 @@ section > h2:first-child { margin-top: 4px; }
 .sheet #event-close { position: sticky; bottom: 0; }
 
 /* Period switch: sticky segmented pill */
-.controls { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--line); }
-.controls button { flex: 1; min-height: 56px; border: 0; border-radius: 999px; background: none; font-weight: 650; color: var(--muted); }
-.controls button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+/* Time bar: ‹ [time picker] › zoom-out, one row above everything it controls */
+.timebar { display: flex; align-items: stretch; gap: 8px; }
+.tb-icon {
+  flex: none; display: grid; place-items: center; width: 56px; min-height: 60px; border: 0; border-radius: 16px;
+  background: var(--card); box-shadow: var(--shadow); font-size: 30px; line-height: 1; color: var(--ink);
+}
+.tb-icon svg, .tp-button svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.tb-icon:disabled { opacity: 0.35; cursor: default; }
+.tp { position: relative; flex: 1; min-width: 0; }
+.tp-button {
+  display: flex; align-items: center; gap: 12px; width: 100%; height: 100%; min-height: 60px; padding: 6px 16px;
+  border: 0; border-radius: 16px; background: var(--card); box-shadow: var(--shadow); text-align: left;
+}
+.tp-text { flex: 1; min-width: 0; line-height: 1.2; }
+.tp-text b { display: block; font-size: 19px; }
+.tp-text small { display: block; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-caret { color: var(--muted); }
+.tp-pop {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 20; max-height: 70vh; overflow: auto;
+  background: var(--card); border-radius: 18px; box-shadow: 0 8px 32px rgb(20 24 31 / 18%); padding: 8px;
+}
+.tp-presets { list-style: none; margin: 0; padding: 0; }
+.tp-presets button {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 8px 12px;
+  border: 0; border-radius: 12px; background: none; text-align: left; font-weight: 600;
+}
+.tp-presets button span { width: 18px; font-weight: 800; color: var(--accent); }
+.tp-presets button:hover { background: var(--bg); }
+.tp-presets button[aria-pressed="true"] { color: var(--accent); }
+.tp-custom { margin-top: 6px; padding: 10px 12px 4px; border-top: 1px solid var(--line); }
+.tp-custom p { margin: 0 0 6px; font-weight: 700; }
+.tp-custom label { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--muted); }
+.tp-custom input { min-height: 48px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 12px; font: inherit; font-size: 18px; color: var(--ink); }
+.tp-custom .big { margin-top: 4px; }
+.tp-error { min-height: 1em; margin: 6px 0 0; color: var(--bad); font-weight: 600; font-size: 17px; }
+.tb-hint { margin: 4px 0 0; }
+.plot .sel { position: absolute; top: 0; bottom: 0; background: rgb(31 95 191 / 14%); border-left: 1.5px solid var(--accent); border-right: 1.5px solid var(--accent); pointer-events: none; }
+.plot .area { user-select: none; }
+.tp-pop { width: min(420px, 100%); }
+@media (hover: none) { .tb-hint { display: none; } } /* drag-to-zoom needs a mouse */
+@media (max-width: 759px) {
+  .tp-pop { width: auto; }
+  .tp-text b { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp-button { gap: 8px; padding: 6px 10px; }
+  .tb-icon { width: 46px; }
+  .timebar { gap: 6px; }
+  .tp { position: static; } /* popover spans the whole time bar on phones */
+}
 .sticky { position: sticky; top: 8px; z-index: 5; margin-bottom: 8px; box-shadow: 0 0 0 8px var(--bg); }
 
 /* Chart cards */

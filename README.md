@@ -16,6 +16,16 @@ npm run build      # statična stran v dist/
 - **Voda** – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
 - **Podatki** – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spektrometer; tabela vseh meritev; prenos CSV.
 
+## Izbira časa (Podatki)
+
+Kot v orodjih za spremljanje (Grafana, Datadog), logika v `src/lib/timerange.mjs`:
+
+- Gumb s časom odpre seznam: zadnja ura, 6 ur, 12 ur, 24 ur, 2 dneva, 7 dni, in polji **Od / Do** za obdobje po meri.
+- **‹ ›** premakneta obdobje za polovico nazaj ali naprej, **lupa** ga podaljša na dvojno dolžino.
+- Z miško **povlecite čez graf**, da povečate izbrani del.
+- Obdobje je v naslovu strani (`?obdobje=24h` ali `?od=…&do=…`), zato se ga da deliti ali shraniti kot zaznamek. Taka povezava odpre pogled Podatki.
+- Obdobje velja za vse: grafe, spektrometer, tabelo in prenos CSV.
+
 ## Spektrometer
 
 Kot v poročilu WaQuMoS: naprava meri, koliko svetlobe halogenske žarnice pride skozi vodo na 18 kanalih (AS7265x, 410–940 nm, vsak širok ~20 nm). Vzorec se primerja s čisto (deionizirano) vodo = 100 % prepustnosti (`src/lib/spectrum.mjs`).
