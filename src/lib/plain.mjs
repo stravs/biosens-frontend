@@ -13,7 +13,7 @@ const MEANING = {
     ends: ['bistra', 'blatna'],
   },
   conductivity: {
-    question: 'Soli',
+    question: 'Minerali',
     bands: [[100, 'Malo'], [800, 'Zmerno'], [2000, 'Veliko'], [Infinity, 'Zelo veliko']],
     span: [0, 3000],
     ends: ['malo', 'veliko'],
@@ -56,7 +56,7 @@ export function describe(key, value, rule = {}) {
 const EVENT_TEXT = {
   temperature: { change: ['Voda se je hitro segrela', 'Voda se je hitro ohladila'], range: ['Voda je bila toplejša kot običajno', 'Voda je bila hladnejša kot običajno'] },
   turbidity: { change: ['Voda je hitro postala bolj motna', 'Voda je hitro postala bolj bistra'], range: ['Voda je bila bolj motna kot običajno', 'Voda je bila bolj bistra kot običajno'] },
-  conductivity: { change: ['Soli v vodi je hitro naraslo', 'Soli v vodi je hitro upadlo'], range: ['V vodi je bilo več soli kot običajno', 'V vodi je bilo manj soli kot običajno'] },
+  conductivity: { change: ['Mineralov je hitro naraslo', 'Mineralov je hitro upadlo'], range: ['Mineralov je bilo več kot običajno', 'Mineralov je bilo manj kot običajno'] },
   fluorescenceRaw: { change: ['Znaki odplak so hitro narasli', 'Znaki odplak so hitro upadli'], range: ['Znakov odplak je bilo več kot običajno', 'Znakov odplak je bilo manj kot običajno'] },
 };
 
