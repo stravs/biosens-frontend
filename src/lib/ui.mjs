@@ -28,13 +28,13 @@ const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', 
 const time = ms => new Date(ms).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 // Time-series plot: hairline grid with y labels, normal-range band, event spans, gaps left open.
-const W = 800, H = 160, PAD = 8;
+const W = 800, H = 160, PAD = 8, PAD_Y = 22; // PAD_Y keeps edge labels inside their own row
 function plot(rows, key, rule = {}, marks = []) {
   const f = FIELDS[key], val = r => rowValue(r, key);
   const values = rows.map(val), finite = values.filter(Number.isFinite);
   const [lo, mid, hi] = ticks(Math.min(...finite, rule.min ?? Infinity), Math.max(...finite, rule.max ?? -Infinity));
   const x = i => PAD + i / Math.max(1, rows.length - 1) * (W - 2 * PAD);
-  const y = v => H - PAD - (v - lo) / (hi - lo) * (H - 2 * PAD);
+  const y = v => H - PAD_Y - (v - lo) / (hi - lo) * (H - 2 * PAD_Y);
   const index = ms => { const i = rows.findIndex(r => r.receivedAt >= ms); return i < 0 ? rows.length - 1 : i; };
   const band = rule.min != null ? `<rect class="band" x="0" width="${W}" y="${y(rule.max)}" height="${y(rule.min) - y(rule.max)}"/>` : '';
   const grid = [lo, mid, hi].map(v => `<line class="grid" x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" vector-effect="non-scaling-stroke"/>`).join('');
@@ -53,18 +53,20 @@ function plot(rows, key, rule = {}, marks = []) {
         <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Graf: ${f.title}">${band}${grid}${spans}<path class="line" d="${path}" vector-effect="non-scaling-stroke"/></svg>
         <div class="cursor" hidden><i></i></div>
       </div>
-    </div>
-    <div class="axis"><span>${tick(rows[0].receivedAt)}</span><span>${tick(middle.receivedAt)}</span><span>${tick(rows.at(-1).receivedAt)}</span></div>`,
+    </div>`,
+    axis: `<div class="axis"><span>${tick(rows[0].receivedAt)}</span><span>${tick(middle.receivedAt)}</span><span>${tick(rows.at(-1).receivedAt)}</span></div>`,
   };
 }
 
 // One crosshair for every chart in a container: pointing at a time shows that time in all charts.
-function syncedHover(container) {
+// With timeEl, the time is shown once there instead of under every value.
+function syncedHover(container, timeEl = null) {
   let rows = [], charts = [];
   const readout = (c, i) => {
     const v = c.values[i], unit = FIELDS[c.key].unit;
     const when = i == null ? (rows.at(-1) === latest ? 'zdaj' : time(rows.at(-1).receivedAt)) : time(rows[i].receivedAt);
-    c.el.querySelector('.readout').innerHTML = `${fmt(i == null ? c.values.at(-1) : v, FIELDS[c.key].digits)}${unit ? ` ${unit}` : ''}<small>${when}</small>`;
+    c.el.querySelector('.readout').innerHTML = `${fmt(i == null ? c.values.at(-1) : v, FIELDS[c.key].digits)}${unit ? ` ${unit}` : ''}${timeEl ? '' : `<small>${when}</small>`}`;
+    if (timeEl) timeEl.textContent = i == null ? `Zadnja meritev · ${when}` : when;
   };
   const show = i => charts.forEach(c => {
     const cursor = c.el.querySelector('.cursor'), dot = cursor.firstElementChild, v = c.values[i];
@@ -143,7 +145,7 @@ function openEvent(ev) {
       <div><dt>Vrhunec</dt><dd>${clock(ev.peak)} · ${fmt(peak?.[ev.key], digits)} ${unit}</dd></div>
     </dl>
     <p class="muted">${why}</p>
-    <article class="chart ts"><h3>${LABEL[ev.key]}<span class="readout"></span></h3>${p.html}</article>
+    <article class="chart ts"><h3>${LABEL[ev.key]}<span class="readout"></span></h3>${p.html}${p.axis}</article>
     <p class="muted">Rumeni pas = čas dogodka. Zeleni pas = običajno območje.</p>`;
   dialogHover.set(around, [{ key: ev.key, el: $('event-body').querySelector('.ts'), ...p }]);
   $('event-dialog').showModal();
@@ -193,14 +195,15 @@ const LINES = ['temperature', 'turbidity', 'conductivity', 'fluorescenceRaw', 'f
 // Table columns: the charted measurements first (same order and names), then the 18 spectral channels.
 const SAMPLE = [...LINES.map(key => [key, FIELDS[key]]), ...fieldsForView('sample').filter(([key]) => !LINES.includes(key))];
 const allEvents = detectEvents(rows, rules);
-const graphsHover = syncedHover($('graphs'));
+const graphsHover = syncedHover($('graphs'), $('stack-time'));
 let hours = 24;
 function drawData() {
   const range = selectRange(rows, hours);
   const from = range[0].receivedAt;
   const plots = LINES.map(key => plot(range, key, rules[key], allEvents.filter(e => e.key === key && e.end >= from)));
-  $('graphs').innerHTML = LINES.map((key, i) => `<article class="chart ts">
-    <h3>${LABEL[key]}<span class="readout"></span></h3>${plots[i].html}</article>`).join('');
+  // One card, rows touching, one time axis at the bottom: the pointer line runs through every row.
+  $('graphs').innerHTML = LINES.map((key, i) => `<div class="ts row">
+    <h3>${LABEL[key]}<span class="readout"></span></h3>${plots[i].html}</div>`).join('') + plots[0].axis;
   graphsHover.set(range, LINES.map((key, i) => ({ key, el: $('graphs').children[i], ...plots[i] })));
   $('spectrum').innerHTML = spectrum(range);
   $('table-head').innerHTML = `<tr><th>Čas</th>${SAMPLE.map(([key, f]) => `<th>${LABEL[key] ?? f.title}${f.unit ? `<br>${f.unit}` : ''}</th>`).join('')}</tr>`;
