@@ -10,12 +10,12 @@ const MAIN = {
   fluorescenceRaw: { name: 'Fluorescenca', digits: 2 },
 };
 const STATUS = {
-  normal: { text: 'Voda je v redu', icon: '✓' },
-  unusual: { text: 'Nekaj je nenavadno', icon: '!' },
-  attention: { text: 'Pozor! Preverite vodo', icon: '!' },
+  normal: { text: 'Vrednosti so normalne', icon: '✓' },
+  unusual: { text: 'Nekatere vrednosti so nenavadne', icon: '!' },
+  attention: { text: 'Vrednosti so izven meja', icon: '!' },
   unknown: { text: 'Ni dovolj podatkov', icon: '?' },
 };
-const WORD = { attention: 'Pozor', unusual: 'Nenavadno', normal: 'V redu' };
+const WORD = { attention: 'Pozor', unusual: 'Nenavadno', normal: 'Normalno' };
 
 const $ = id => document.getElementById(id);
 const fmt = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '–';
