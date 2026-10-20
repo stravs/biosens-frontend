@@ -40,7 +40,7 @@ Pogled **Voda** vsako meritev prevede v vprašanje in preprost odgovor (`src/lib
 
 | Meritev | Vprašanje | Odgovori | Vir referenčnih vrednosti |
 |---|---|---|---|
-| Temperatura | Kako topla je voda? | mrzla < 8 °C, hladna < 16, sveža < 22, topla | vsakdanji občutek |
+| Temperatura | Temperatura vode | samo številka v °C | – |
 | Motnost | Kako bistra je voda? | bistra < 1 NTU, rahlo motna < 5, motna < 50, zelo motna | smernice SZO za pitno vodo (5 NTU, idealno < 1) |
 | Prevodnost | Koliko soli je v vodi? | malo < 100 µS/cm, zmerno < 800, veliko < 2000, zelo veliko | tipične vrednosti: destilirana ~1, pipa/reke 50–800, morje ~50.000 |
 | Fluorescenca | Ali so v vodi znaki odplak? | manj / kot običajno / več kot običajno (glede na nastavljeno območje) | poročilo WaQuMoS: UV fluorescenca, podobna triptofanu, kot kazalnik fekalnega onesnaženja (E. coli) |

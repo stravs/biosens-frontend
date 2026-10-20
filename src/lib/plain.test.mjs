@@ -9,9 +9,9 @@ test('turbidity follows everyday clarity bands', () => {
   assert.equal(describe('turbidity', 120).answer, 'Zelo motna');
 });
 
-test('temperature and conductivity bands', () => {
-  assert.equal(describe('temperature', 5).answer, 'Mrzla');
-  assert.equal(describe('temperature', 18.2).answer, 'Sveža');
+test('temperature is shown as a number; conductivity uses bands', () => {
+  assert.equal(describe('temperature', 18.2).answer, null);
+  assert.equal(describe('temperature', 18.2).position, null);
   assert.equal(describe('conductivity', 450).answer, 'Zmerno');
   assert.equal(describe('conductivity', 50000).answer, 'Zelo veliko');
 });

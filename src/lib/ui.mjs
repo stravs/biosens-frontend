@@ -51,8 +51,8 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
   const scale = plain.position == null ? '' : `<div class="scale" aria-hidden="true"><div class="track"><i style="left:${(plain.position * 100).toFixed(1)}%"></i></div>
       <div class="ends"><span>${plain.ends[0]}</span><span>${plain.ends[1]}</span></div></div>`;
   return `<div class="card" data-status="${state}"><h3>${plain.question}</h3>
-    <p class="answer">${plain.answer}</p>
-    <p class="measure">${name}: ${fmt(latest[key], digits)} ${FIELDS[key].unit}</p>
+    <p class="answer">${plain.answer ?? `${fmt(latest[key], digits)} ${FIELDS[key].unit}`}</p>
+    ${plain.answer == null ? '' : `<p class="measure">${name}: ${fmt(latest[key], digits)} ${FIELDS[key].unit}</p>`}
     ${scale}
     ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
 }).join('');

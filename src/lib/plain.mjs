@@ -4,12 +4,8 @@
 // only compared with the normal range set for the device.
 
 const MEANING = {
-  temperature: {
-    question: 'Kako topla je voda?',
-    bands: [[8, 'Mrzla'], [16, 'Hladna'], [22, 'Sveža'], [Infinity, 'Topla']],
-    span: [0, 30],
-    ends: ['mrzla', 'topla'],
-  },
+  // Temperature needs no translation: the number itself is the answer.
+  temperature: { question: 'Temperatura vode', number: true },
   turbidity: {
     question: 'Kako bistra je voda?',
     bands: [[1, 'Bistra'], [5, 'Rahlo motna'], [50, 'Motna'], [Infinity, 'Zelo motna']],
@@ -44,6 +40,7 @@ function bandPosition(value, limits, span) {
 
 export function describe(key, value, rule = {}) {
   const m = MEANING[key];
+  if (m?.number) return { question: m.question, answer: null, position: null, ends: [] };
   if (!m || !Number.isFinite(value)) return { question: m?.question ?? '', answer: 'Ni podatka', position: null, ends: m?.ends ?? [] };
   if (m.relative) {
     if (rule.min == null || rule.max == null) return { question: m.question, answer: 'Ni primerjave', position: null, ends: m.ends };
