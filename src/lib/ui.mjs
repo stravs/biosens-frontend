@@ -1,5 +1,5 @@
 // Simple page: three views (everyone / expert / maintenance). All data is simulated.
-import { DEMO_SETTINGS, FIELDS, buildDemoData, fieldsForView, rowValue, selectRange, toCsv } from './app.mjs';
+import { FIELDS, buildDemoData, fieldsForView, rowValue, selectRange, toCsv } from './app.mjs';
 import { assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 import { createDemoRules } from './demo-rules.mjs';
 import { describe, eventText } from './plain.mjs';
@@ -229,20 +229,6 @@ $('device').innerHTML = [
   ['Signal', `${signal} · ${latest.rssi} dBm · SNR ${fmt(latest.snr, 1)} dB`, signal === 'Slab' ? 'unusual' : 'normal'],
   ...[1, 2, 3].map(i => [`Temperatura čipa ${i}`, `${latest[`chipTemp${i}`]} °C`]),
 ].map(([label, value, state]) => `<div${state ? ` data-status="${state}"` : ''}><dt>${label}</dt><dd>${value}</dd></div>`).join('');
-const num = value => String(value).replace('.', ',').replace('-', '−');
-const coeffs = c => [['odmik', c.offset], ['ojačanje', c.gain], ['ojačanje²', c.gainSquare]]
-  .filter(([, v]) => v !== undefined).map(([name, v]) => `${name} ${num(v)}`).join(' · ');
-const { interval: iv } = DEMO_SETTINGS;
-$('settings').innerHTML = [
-  ['Programska oprema', `FW ${DEMO_SETTINGS.firmware}`],
-  ['Način', DEMO_SETTINGS.mode === 'normal' ? 'Normalni' : 'Programiranje'],
-  ['Interval meritev', [[iv.day, 'd'], [iv.hour, 'h'], [iv.min, 'min'], [iv.sec, 's']].filter(([v]) => v).map(([v, u]) => `${v} ${u}`).join(' ') || '–'],
-  ['Ukaz v vsakem ciklu', DEMO_SETTINGS.repeatCommand],
-  ['Kalibracija prevodnosti', coeffs(DEMO_SETTINGS.conductivity)],
-  ['Kalibracija motnosti', coeffs(DEMO_SETTINGS.turbidity)],
-  ['Kalibracija fluorescence', coeffs(DEMO_SETTINGS.fluorescence)],
-  ['Odmik temperature', `${num(DEMO_SETTINGS.temperature.offset)} °C`],
-].map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('');
 $('packets').innerHTML = rows.slice(-8).reverse().map(row =>
   `<tr><td>${time(row.receivedAt)}</td><td>${row.rssi} dBm</td><td>${fmt(row.snr, 1)} dB</td></tr>`).join('');
 

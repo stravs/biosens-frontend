@@ -16,16 +16,6 @@ export const FIELDS = {
   snr: { title: 'Razmerje signal/šum · SNR', unit: 'dB', digits: 1, group: 'network' },
 };
 
-// Device settings as stored in firmware flash (FW2 defaults from lib/BioSensCore settings.hpp).
-export const DEMO_SETTINGS = {
-  firmware: '2.0.0', mode: 'normal',
-  interval: { day: 0, hour: 0, min: 5, sec: 0 }, repeatCommand: 'ATALLDATA',
-  conductivity: { offset: -1241.5773, gain: 0.370295, gainSquare: 0.117642 },
-  turbidity: { offset: -20.979, gain: 0.2549, gainSquare: 0.0003 },
-  fluorescence: { offset: 38.766, gain: -16.2447 },
-  temperature: { offset: 0 },
-};
-
 export function fieldsForView(view) {
   if (!['sample', 'device', 'all'].includes(view)) throw new Error('Neznan pogled podatkov.');
   return Object.entries(FIELDS).filter(([, config]) => view === 'all' ||
