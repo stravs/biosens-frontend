@@ -21,7 +21,7 @@ const $ = id => document.getElementById(id);
 const fmt = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '–';
 const time = ms => new Date(ms).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-function chart(rows, key, rule = {}) {
+function chart(rows, key, rule = {}, mark = null) {
   const w = 800, h = 200, pad = 12;
   const values = rows.map(row => rowValue(row, key));
   const lo = Math.min(...values, rule.min ?? Infinity), hi = Math.max(...values, rule.max ?? -Infinity);
@@ -29,8 +29,10 @@ function chart(rows, key, rule = {}) {
   const y = v => h - pad - (v - lo) / (hi - lo || 1) * (h - 2 * pad);
   const band = rule.min != null ? `<rect x="0" width="${w}" y="${y(rule.max)}" height="${y(rule.min) - y(rule.max)}" class="band"/>` : '';
   const path = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const at = ms => x(Math.max(0, rows.findIndex(r => r.receivedAt >= ms)));
+  const span = mark ? `<rect class="mark" x="${at(mark.start)}" width="${Math.max(4, at(mark.end) - at(mark.start))}" y="0" height="${h}"/>` : '';
   const digits = FIELDS[key].digits, unit = FIELDS[key].unit;
-  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Graf: ${FIELDS[key].title}">${band}<path d="${path}" class="line" vector-effect="non-scaling-stroke"/></svg>
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Graf: ${FIELDS[key].title}">${band}${span}<path d="${path}" class="line" vector-effect="non-scaling-stroke"/></svg>
     <div class="axis"><span>${time(rows[0].receivedAt)}</span><span>${time(rows.at(-1).receivedAt)}</span></div>
     <p class="range">Najnižje ${fmt(Math.min(...values), digits)} ${unit} · najvišje ${fmt(Math.max(...values), digits)} ${unit}</p>`;
 }
@@ -71,10 +73,34 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
 const events = eventsInRange(detectEvents(rows, rules), latest.receivedAt, 24).slice(0, 6);
 const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 $('events').innerHTML = events.length
-  ? events.map(ev => {
-    return `<li data-status="${ev.severity}"><b>${time(ev.start)}</b><em>${eventText(ev)}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span></li>`;
-  }).join('')
+  ? events.map((ev, i) => `<li data-status="${ev.severity}"><button type="button" data-event="${i}">
+      <b>${time(ev.start)}</b><em>${eventText(ev)}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span><i aria-hidden="true">›</i></button></li>`).join('')
   : '<li data-status="normal"><em>V zadnjih 24 urah ni bilo nič posebnega.</em></li>';
+
+// Event detail: what happened, when, and the measurement around it.
+function openEvent(ev) {
+  const f = FIELDS[ev.key], rule = rules[ev.key] ?? {};
+  const unit = f.unit, digits = MAIN[ev.key].digits;
+  const around = rows.filter(r => r.receivedAt >= ev.start - 2 * 3600000 && r.receivedAt <= ev.end + 2 * 3600000);
+  const peak = rows.find(r => r.receivedAt === ev.peak);
+  const why = ev.type === 'range'
+    ? `Običajno območje je ${fmt(rule.min, digits)}–${fmt(rule.max, digits)} ${unit}.`
+    : `V eni uri se je spremenilo za ${fmt(ev.magnitude, digits)} ${unit}. Opozorimo pri ${fmt(rule.change, digits)} ${unit}.`;
+  $('event-body').innerHTML = `<h2>${eventText(ev)}</h2>
+    <dl class="event-facts">
+      <div><dt>Začetek</dt><dd>${time(ev.start)}</dd></div>
+      <div><dt>Konec</dt><dd>${ev.ongoing ? 'Še traja' : time(ev.end)}</dd></div>
+      <div><dt>Vrhunec</dt><dd>${clock(ev.peak)} · ${fmt(peak?.[ev.key], digits)} ${unit}</dd></div>
+    </dl>
+    <p class="muted">${why}</p>
+    <div class="chart">${chart(around, ev.key, rule, ev)}</div>
+    <p class="muted">Modri pas = čas dogodka. Zeleni pas = običajno območje.</p>`;
+  $('event-dialog').showModal();
+  $('event-dialog').scrollTop = 0; // focus lands on Zapri at the bottom; keep the title in view
+}
+document.querySelectorAll('[data-event]').forEach(b => b.addEventListener('click', () => openEvent(events[+b.dataset.event])));
+$('event-close').addEventListener('click', () => $('event-dialog').close());
+$('event-dialog').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
 // Spectrometer: shape of the spectrum (start vs now) + every channel over time as a heatmap.
 function spectrum(range) {

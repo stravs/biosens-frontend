@@ -54,8 +54,9 @@ export function describe(key, value, rule = {}) {
 }
 
 const EVENT_TEXT = {
-  temperature: { change: ['Voda se je hitro segrela', 'Voda se je hitro ohladila'], range: ['Voda je bila toplejša kot običajno', 'Voda je bila hladnejša kot običajno'] },
-  turbidity: { change: ['Voda je hitro postala bolj motna', 'Voda je hitro postala bolj bistra'], range: ['Voda je bila bolj motna kot običajno', 'Voda je bila bolj bistra kot običajno'] },
+  temperature: { change: ['Temperatura je hitro narasla', 'Temperatura je hitro padla'], range: ['Temperatura je bila višja kot običajno', 'Temperatura je bila nižja kot običajno'] },
+  // Turbidity going up means clarity going down.
+  turbidity: { change: ['Bistrost se je hitro zmanjšala', 'Bistrost se je hitro povečala'], range: ['Bistrost je bila manjša kot običajno', 'Bistrost je bila večja kot običajno'] },
   conductivity: { change: ['Mineralov je hitro naraslo', 'Mineralov je hitro upadlo'], range: ['Mineralov je bilo več kot običajno', 'Mineralov je bilo manj kot običajno'] },
   fluorescenceRaw: { change: ['Organsko onesnaženje je hitro naraslo', 'Organsko onesnaženje je hitro upadlo'], range: ['Organskega onesnaženja je bilo več kot običajno', 'Organskega onesnaženja je bilo manj kot običajno'] },
 };

@@ -40,6 +40,6 @@ test('missing values are reported plainly', () => {
 });
 
 test('events read as plain sentences', () => {
-  assert.equal(eventText({ key: 'turbidity', type: 'change', direction: 1 }), 'Voda je hitro postala bolj motna');
-  assert.equal(eventText({ key: 'temperature', type: 'range', direction: -1 }), 'Voda je bila hladnejša kot običajno');
+  assert.equal(eventText({ key: 'turbidity', type: 'change', direction: 1 }), 'Bistrost se je hitro zmanjšala');
+  assert.equal(eventText({ key: 'temperature', type: 'range', direction: -1 }), 'Temperatura je bila nižja kot običajno');
 });
