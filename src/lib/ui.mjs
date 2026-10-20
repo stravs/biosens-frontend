@@ -51,15 +51,62 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
     <p class="word">${WORD[state]}</p></div>`;
 }).join('');
 
-// Expert: a graph for every sample measurement + full table, for the chosen period.
+// Everyone: notable events in plain words, newest first.
+const events = eventsInRange(detectEvents(rows, rules), latest.receivedAt, 24).slice(0, 6);
+const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
+$('events').innerHTML = events.length
+  ? events.map(ev => {
+    const name = MAIN[ev.key].name, up = ev.direction > 0;
+    const what = ev.type === 'range' ? `${name} je bila ${up ? 'previsoka' : 'prenizka'}` : `${name} se je hitro ${up ? 'zvišala' : 'znižala'}`;
+    return `<li data-status="${ev.severity}"><b>${time(ev.start)}</b> ${what}<span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span></li>`;
+  }).join('')
+  : '<li data-status="normal">V zadnjih 24 urah ni bilo nič posebnega.</li>';
+
+// Spectrometer: shape of the spectrum (start vs now) + every channel over time as a heatmap.
+function spectrum(range) {
+  const first = range[0].spectrum, last = range.at(-1).spectrum;
+  const nm = last.map(c => c.wavelength), all = [...first, ...last].map(c => c.value);
+  const lo = Math.min(...all), hi = Math.max(...all);
+  const w = 800, h = 220, pad = 16;
+  const x = v => pad + (v - 410) / (940 - 410) * (w - 2 * pad);
+  const y = v => h - pad - (v - lo) / (hi - lo || 1) * (h - 2 * pad);
+  const line = (s, cls) => `<path class="${cls}" vector-effect="non-scaling-stroke" d="${s.map((c, i) => `${i ? 'L' : 'M'}${x(c.wavelength).toFixed(1)},${y(c.value).toFixed(1)}`).join('')}"/>`;
+  const dots = last.map(c => `<circle cx="${x(c.wavelength)}" cy="${y(c.value)}" r="12" class="hit"><title>${c.wavelength} nm · zdaj ${fmt(c.value, 1)} · na začetku ${fmt(first.find(f => f.channel === c.channel).value, 1)}</title></circle>`).join('');
+
+  // Heatmap: up to 96 time columns, each the average of its bucket; shaded per channel from its own min to max.
+  const cols = Math.min(96, range.length), size = range.length / cols;
+  const buckets = Array.from({ length: cols }, (_, i) => range.slice(Math.floor(i * size), Math.floor((i + 1) * size)));
+  const cells = nm.map((wl, ch) => {
+    const vals = buckets.map(b => b.reduce((s, r) => s + r.spectrum[ch].value, 0) / b.length);
+    const cmin = Math.min(...vals), cmax = Math.max(...vals);
+    return vals.map((v, i) => {
+      const p = Math.round(10 + 90 * (v - cmin) / (cmax - cmin || 1));
+      return `<rect x="${i}" y="${ch}" width="1.02" height="0.94" style="fill:color-mix(in oklab, var(--accent) ${p}%, var(--card))"><title>${wl} nm · ${time(buckets[i][0].receivedAt)} · ${fmt(v, 1)}</title></rect>`;
+    }).join('');
+  }).join('');
+
+  return `<h3>Spekter zdaj in na začetku obdobja</h3>
+    <p class="legend"><span><span class="key"></span> Zdaj</span><span><span class="key then"></span> Na začetku obdobja</span></p>
+    <svg class="spec" viewBox="0 0 ${w} ${h}" role="img" aria-label="Spekter po valovnih dolžinah">${line(first, 'line then')}${line(last, 'line')}${dots}</svg>
+    <div class="axis"><span>410 nm</span><span>valovna dolžina</span><span>940 nm</span></div>
+    <h3 class="gap">Vsi kanali skozi čas</h3>
+    <p class="muted">Vsaka vrstica je en kanal. Temneje = višji odziv tega kanala.</p>
+    <div class="heat"><div class="heat-labels">${nm.map(wl => `<span>${wl}</span>`).join('')}</div>
+      <svg viewBox="0 0 ${cols} ${nm.length}" preserveAspectRatio="none" role="img" aria-label="Toplotna karta vseh kanalov skozi čas">${cells}</svg></div>
+    <div class="axis heat-axis"><span>${time(range[0].receivedAt)}</span><span>${time(range.at(-1).receivedAt)}</span></div>`;
+}
+
+// Expert: graphs for the main measurements, the spectrometer, and a full table, for the chosen period.
 const SAMPLE = fieldsForView('sample');
+const LINES = SAMPLE.filter(([, f]) => f.group !== 'spectrum');
 const unitText = unit => unit ? ` ${unit}` : '';
 let hours = 24;
 function drawData() {
   const range = selectRange(rows, hours);
-  $('graphs').innerHTML = SAMPLE.map(([key, f]) => `<article class="chart">
+  $('graphs').innerHTML = LINES.map(([key, f]) => `<article class="chart">
     <h3>${f.title}<span>${fmt(rowValue(latest, key), f.digits)}${unitText(f.unit)}</span></h3>
     ${chart(range, key, rules[key])}</article>`).join('');
+  $('spectrum').innerHTML = spectrum(range);
   $('table-head').innerHTML = `<tr><th>Čas</th>${SAMPLE.map(([, f]) => `<th>${f.title}${f.unit ? `<br>${f.unit}` : ''}</th>`).join('')}</tr>`;
   $('readings').innerHTML = range.slice().reverse().map(row =>
     `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
@@ -69,10 +116,6 @@ function drawData() {
 document.querySelectorAll('[data-hours]').forEach(b => b.addEventListener('click', () => { hours = +b.dataset.hours; drawData(); }));
 drawData();
 
-const events = eventsInRange(detectEvents(rows, rules), latest.receivedAt, 24).slice(0, 6);
-$('events').innerHTML = events.length
-  ? events.map(ev => `<li>${time(ev.start)} · ${MAIN[ev.key].name}: ${ev.type === 'range' ? 'izven območja' : 'hitra sprememba'}${ev.ongoing ? ' <b>(še traja)</b>' : ''}</li>`).join('')
-  : '<li>V zadnjih 24 urah ni bilo posebnosti.</li>';
 $('csv').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob(['﻿', toCsv(rows, 'sample')], { type: 'text/csv;charset=utf-8' }));
   const link = Object.assign(document.createElement('a'), { href: url, download: 'biosens-7dni.csv' });

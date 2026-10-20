@@ -21,6 +21,8 @@ import '../styles.css';
       <h1 id="status" class="status"></h1>
       <p id="updated" class="muted"></p>
       <div id="cards" class="cards"></div>
+      <h2>Posebni dogodki v zadnjih 24 urah</h2>
+      <ul id="events" class="events"></ul>
     </section>
 
     <section id="expert" hidden>
@@ -29,12 +31,13 @@ import '../styles.css';
         <button type="button" data-hours="168">Zadnjih 7 dni</button>
       </div>
 
-      <h2>Posebnosti v zadnjih 24 urah</h2>
-      <ul id="events" class="list"></ul>
-
       <h2>Grafi</h2>
       <p class="muted">Velika številka = zadnja meritev. Zeleni pas = običajno območje.</p>
       <div id="graphs" class="graphs"></div>
+
+      <h2>Spektrometer</h2>
+      <p class="muted">18 kanalov od 410 do 940 nm. Za vrednost se z miško postavite na točko ali polje.</p>
+      <article id="spectrum" class="chart"></article>
 
       <h2>Vse meritve</h2>
       <p id="table-count" class="muted"></p>
