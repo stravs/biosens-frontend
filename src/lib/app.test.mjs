@@ -41,8 +41,8 @@ test('CSV has UTC timestamps, consistent columns, and explicit demo labels', () 
   const csv = toCsv(selectRange(rows, 6));
   const lines = csv.split('\r\n');
   assert.equal(lines.length, 74);
-  assert.ok(lines.every(line => line.split(';').length === 31));
-  assert.ok(lines.slice(1).every(line => line.endsWith(';da')));
+  assert.ok(lines.every(line => line.split(';').length === 32));
+  assert.ok(lines.slice(1).every(line => line.endsWith(';1;da')));
   assert.ok(lines.at(-1).startsWith('2026-10-22T12:00:00.000Z;1;'));
   const header = lines[0].split(';');
   const values = lines.at(-1).split(';');
@@ -65,7 +65,7 @@ test('sample and device views separate all measurements without overlap', () => 
 });
 
 test('CSV exports only fields from the selected view and retains device context', () => {
-  for (const [view, columns] of [['sample', 26], ['device', 8]]) {
+  for (const [view, columns] of [['sample', 27], ['device', 9]]) {
     const lines = toCsv(selectRange(rows, 6), view).split('\r\n');
     assert.equal(lines.length, 74);
     assert.ok(lines.every(line => line.split(';').length === columns));

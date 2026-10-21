@@ -1,4 +1,4 @@
-// Simple page: three views (everyone / expert / maintenance). All data is simulated.
+// Simple page: three views (everyone / expert / maintenance). Data from the device, or simulated when there is none yet.
 import { FIELDS, buildDemoData, fieldsForView, rowValue, toCsv } from './app.mjs';
 import { MAIN_FIELDS, assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 import { STORAGE_KEY, loadSettings, validateSettings } from './settings.mjs';
@@ -42,7 +42,9 @@ const $ = id => document.getElementById(id);
 // Rounds first so tiny negatives show as 0 instead of -0.
 const fmt = (value, digits) => Number.isFinite(value) ? ((Math.round(value * 10 ** digits) / 10 ** digits) || 0).toFixed(digits).replace('.', ',') : '–';
 const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
-const time = ms => new Date(ms).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+// Dates from another year show the year too ("16. 9. 2025").
+const year = ms => new Date(ms).getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' };
+const time = ms => new Date(ms).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', ...year(ms), hour: '2-digit', minute: '2-digit' });
 
 // Time-series plot: hairline grid with y labels, normal-range band, event spans, gaps left open.
 const W = 800, H = 160, PAD = 8, PAD_Y = 22; // PAD_Y keeps edge labels inside their own row
@@ -65,7 +67,7 @@ function plot(rows, key, rule = {}, marks = [], meta = {}) {
   const middle = rows[Math.floor((rows.length - 1) / 2)];
   // Short axis labels: clock time up to a day, date for longer periods.
   const tick = ms => rows.at(-1).receivedAt - rows[0].receivedAt > 86400000
-    ? new Date(ms).toLocaleDateString('sl-SI', { day: 'numeric', month: 'numeric' }) : clock(ms);
+    ? new Date(ms).toLocaleDateString('sl-SI', { day: 'numeric', month: 'numeric', ...year(ms) }) : clock(ms);
   return {
     x, y, values, unit: f.unit, digits: f.digits,
     html: `<div class="plot">
@@ -87,7 +89,7 @@ function syncedHover(container, timeEl = null, onSelect = null) {
   let rows = [], charts = [], drag = null;
   const readout = (c, i) => {
     const v = c.values[i], unit = c.unit;
-    const when = i == null ? (rows.at(-1) === latest ? 'zdaj' : time(rows.at(-1).receivedAt)) : time(rows[i].receivedAt);
+    const when = i == null ? (rows.at(-1).receivedAt === latest.receivedAt ? 'zdaj' : time(rows.at(-1).receivedAt)) : time(rows[i].receivedAt);
     c.el.querySelector('.readout').innerHTML = `${fmt(i == null ? c.values.at(-1) : v, c.digits)}${unit ? ` ${unit}` : ''}${timeEl ? '' : `<small>${when}</small>`}`;
     if (timeEl) timeEl.textContent = i == null ? `Zadnja meritev · ${when}` : when;
   };
@@ -136,14 +138,30 @@ function syncedHover(container, timeEl = null, onSelect = null) {
   return { set(newRows, newCharts) { rows = newRows; charts = newCharts; hide(); } };
 }
 
-// Spectrometer readings are compared with the device's own normal: the median of the loaded week.
-const raw = buildDemoData(1);
-const reference = baseline(raw);
-const rows = raw.map(r => ({ ...r, ...indicators(r.spectrum, reference) }));
+const WEEK = 7 * 86400000;
 let savedSettings = null;
 try { savedSettings = localStorage.getItem(STORAGE_KEY); } catch {}
 const settings = loadSettings(savedSettings);
 const rules = settings.rules;
+
+// JSON from the Worker; null on error, or with no API (astro dev).
+async function fetchJson(path) {
+  try { const response = await fetch(path); if (response.ok) return await response.json(); } catch {}
+  return null;
+}
+// Spectrometer readings are compared with the device's own normal: the per-channel median of the given readings.
+function prepare(raw) {
+  const reference = baseline(raw);
+  const rows = raw.map(r => ({ ...r, ...indicators(r.spectrum, reference) }));
+  return { reference, rows, events: detectEvents(rows, rules, EVENT_KEYS) };
+}
+// Voda and Naprava use the week up to the newest reading. Demo data only while the device has sent nothing.
+const week = await fetchJson('/api/readings');
+const simulated = !week?.rows.length;
+$('source').textContent = simulated ? 'Ni podatkov z naprave: prikazani so simulirani podatki. Privzete meje so izmišljene.'
+  : 'Podatki z naprave. Privzete meje so izmišljene.';
+const latestWeek = prepare(simulated ? buildDemoData(1) : week.rows);
+const rows = latestWeek.rows;
 const latest = rows.at(-1);
 
 // Everyone: one big answer + four cards.
@@ -175,7 +193,7 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
 }).join('');
 
 // Everyone: notable events in plain words, newest first.
-const allEvents = detectEvents(rows, rules, EVENT_KEYS);
+const allEvents = latestWeek.events;
 const events = eventsInRange(allEvents, latest.receivedAt, 24).slice(0, 6);
 $('events').innerHTML = events.length
   ? events.map((ev, i) => `<li data-status="${ev.severity}"><button type="button" data-event="${i}">
@@ -214,7 +232,7 @@ $('event-dialog').addEventListener('click', e => { if (e.target === e.currentTar
 const NM_MIN = 400, NM_MAX = 950;
 const nmX = nm => (nm - NM_MIN) / (NM_MAX - NM_MIN) * 100; // % across the plot
 
-function spectrumCard(range) {
+function spectrumCard(range, reference) {
   const now = transmission(range.at(-1).spectrum, reference), then = transmission(range[0].spectrum, reference);
   const all = [...now, ...then].map(c => c.value);
   const lo = Math.floor(Math.min(...all) - 1), hi = Math.max(101, Math.ceil(Math.max(...all)) + 1);
@@ -243,7 +261,7 @@ function spectrumCard(range) {
     <p class="muted small">Valovna dolžina v nm. Barvni trak = 18 kanalov, vsak širok okoli 20 nm. Nad 700 nm je infrardeča svetloba (siva).</p>`;
 }
 
-function heatmap(range) {
+function heatmap(range, reference) {
   const cols = Math.min(96, range.length), size = range.length / cols;
   const buckets = Array.from({ length: cols }, (_, i) => range.slice(Math.floor(i * size), Math.floor((i + 1) * size)));
   const grid = buckets.map(b => transmission(b.at(-1).spectrum, reference).map((c, ch) => ({ wavelength: c.wavelength,
@@ -266,14 +284,19 @@ function heatmap(range) {
 const LINES = ['temperature', 'turbidity', 'conductivity', 'fluorescenceRaw', 'fluorescence'];
 // Table columns: the charted measurements first (same order and names), then the 18 spectral channels.
 const SAMPLE = [...LINES.map(key => [key, FIELDS[key]]), ...fieldsForView('sample').filter(([key]) => !LINES.includes(key))];
-const bounds = { start: rows[0].receivedAt, end: latest.receivedAt };
+// Podatki can go back to the first reading ever; other periods are fetched when chosen.
+// Up to a week: single readings. Longer: hourly averages (bucket = hours averaged per point).
+const bounds = simulated ? { start: rows[0].receivedAt, end: latest.receivedAt } : { start: week.start, end: week.end };
+let shown = { from: bounds.end - WEEK, to: bounds.end, bucket: null, ...latestWeek };
+let request = 0;
 const zoomTo = (from, to) => setRange({ from, to });
 const graphsHover = syncedHover($('graphs'), $('stack-time'), zoomTo);
 const specHover = syncedHover($('spec-graphs'), $('spec-time'), zoomTo);
 // Time range: one control above everything; charts, spectrometer, table and CSV all follow it.
 const urlRange = fromQuery(location.search);
 let current = resolve(urlRange ?? DEFAULT, bounds);
-const inRange = list => list.filter(r => r.receivedAt >= current.from && r.receivedAt <= current.to);
+// Averages are fetched for exactly the chosen period; their first bucket may start a little before it.
+const shownRows = () => shown.bucket ? shown.rows : shown.rows.filter(r => r.receivedAt >= current.from && r.receivedAt <= current.to);
 function setRange(state) {
   current = resolve(state.preset ? state : snapToPreset(clamp(state, bounds), bounds), bounds);
   try { history.replaceState(null, '', `?${toQuery(current)}`); } catch {}
@@ -293,17 +316,38 @@ function drawTimeBar() {
   $('t-from').min = $('t-to').min = toInputValue(bounds.start);
   $('t-from').max = $('t-to').max = toInputValue(bounds.end);
 }
-function drawData() {
-  const range = inRange(rows);
-  const from = range[0].receivedAt, to = range.at(-1).receivedAt;
+function drawEmpty(message) {
+  $('graphs').innerHTML = `<p class="muted">${message}</p>`;
+  for (const id of ['spectrum', 'spec-heat', 'spec-graphs', 'readings']) $(id).innerHTML = '';
+  graphsHover.set([], []);
+  specHover.set([], []);
+  $('table-count').textContent = message;
+}
+async function drawData() {
   drawTimeBar();
+  const id = ++request;
+  const long = current.to - current.from > WEEK;
+  if (long || shown.bucket || current.from < shown.from || current.to > shown.to) {
+    // Single readings come with the week before the end, so "normal" is that week's median, as for the latest data.
+    // Averages: "normal" is the median over the whole period.
+    const to = Math.ceil(current.to), from = Math.floor(long ? current.from : Math.min(current.from, to - WEEK));
+    $('table-count').textContent = 'Nalagam …';
+    const data = await fetchJson(`/api/${long ? 'hours' : 'readings'}?from=${from}&to=${to}`);
+    if (id !== request) return; // a newer choice is already loading
+    if (!data) return drawEmpty('Podatkov ni bilo mogoče naložiti. Poskusite znova.');
+    shown = { from, to, bucket: data.bucket ?? null, ...(data.rows.length ? prepare(data.rows) : { rows: [], events: [], reference: null }) };
+  }
+  const range = shownRows();
+  if (!range.length) return drawEmpty('V tem obdobju ni meritev.');
+  const { events: allEvents, reference } = shown;
+  const from = range[0].receivedAt, to = range.at(-1).receivedAt;
   const plots = LINES.map(key => plot(range, key, rules[key], allEvents.filter(e => e.key === key && e.end >= from && e.start <= to)));
   // One card, rows touching, one time axis at the bottom: the pointer line runs through every row.
   $('graphs').innerHTML = LINES.map((key, i) => `<div class="ts row">
     <h3>${LABEL[key]}<span class="readout"></span></h3>${plots[i].html}</div>`).join('') + plots[0].axis;
   graphsHover.set(range, LINES.map((key, i) => ({ key, el: $('graphs').children[i], ...plots[i] })));
-  $('spectrum').innerHTML = spectrumCard(range);
-  $('spec-heat').innerHTML = heatmap(range);
+  $('spectrum').innerHTML = spectrumCard(range, reference);
+  $('spec-heat').innerHTML = heatmap(range, reference);
   const specPlots = SPEC.map(s => plot(range, s.key, rules[s.key], allEvents.filter(e => e.key === s.key && e.end >= from && e.start <= to), specMeta(s.key)));
   $('spec-graphs').innerHTML = SPEC.map((s, i) => `<div class="ts row">
     <h3>${s.title}<small class="hint">${s.hint}</small><span class="readout"></span></h3>${specPlots[i].html}</div>`).join('') + specPlots[0].axis;
@@ -311,7 +355,7 @@ function drawData() {
   $('table-head').innerHTML = `<tr><th>Čas</th>${SAMPLE.map(([key, f]) => `<th>${LABEL[key] ?? f.title}${f.unit ? `<br>${f.unit}` : ''}</th>`).join('')}</tr>`;
   $('readings').innerHTML = range.slice().reverse().map(row =>
     `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
-  $('table-count').textContent = `${range.length} meritev, najnovejše zgoraj.`;
+  $('table-count').textContent = shown.bucket ? `${range.length} povprečij po ${shown.bucket / 3600000} h, najnovejše zgoraj.` : `${range.length} meritev, najnovejše zgoraj.`;
 }
 
 // Time picker popover: presets as rows, custom range below a hairline.
@@ -343,7 +387,7 @@ $('t-zoom').addEventListener('click', () => setRange(zoomOut(current, bounds)));
 drawData();
 
 $('csv').addEventListener('click', () => {
-  const url = URL.createObjectURL(new Blob(['\ufeff', toCsv(inRange(rows), 'sample')], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(new Blob(['\ufeff', toCsv(shownRows(), 'sample', simulated)], { type: 'text/csv;charset=utf-8' }));
   const stamp = ms => toInputValue(ms).replace('T', '_').replace(':', '');
   const link = Object.assign(document.createElement('a'), { href: url, download: `biosens_${stamp(current.from)}_${stamp(current.to)}.csv` });
   document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);

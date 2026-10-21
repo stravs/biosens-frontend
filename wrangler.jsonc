@@ -1,7 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "biosens-frontend",
+  "main": "worker/index.mjs",
   "compatibility_date": "2026-10-01",
-  // Static site only: Astro builds to dist/, the Worker serves those files.
-  "assets": { "directory": "./dist" }
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Only the API goes through the Worker; the page is served straight from assets.
+    "run_worker_first": ["/api/*"]
+  },
+  // Uplinks from the UG65. Without an id, wrangler creates the database on the first deploy.
+  "d1_databases": [{ "binding": "DB", "database_name": "biosens" }]
+  // Secret UPLINK_TOKEN (wrangler secret put UPLINK_TOKEN): the gateway must send it with each uplink.
 }

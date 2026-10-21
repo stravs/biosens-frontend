@@ -1,7 +1,7 @@
-// Demo data and CSV export. The page itself lives in ui.mjs.
+// Fields, demo data and CSV export. The page itself lives in ui.mjs.
 
-const CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'R', 'I', 'S', 'J', 'T', 'U', 'V', 'W', 'K', 'L'];
-const WAVELENGTHS = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940];
+export const CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'R', 'I', 'S', 'J', 'T', 'U', 'V', 'W', 'K', 'L'];
+export const WAVELENGTHS = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940];
 // Made-up raw lamp counts per channel for the simulation.
 const DEMO_LAMP = [21000, 23500, 26000, 28500, 31000, 33500, 36000, 38000, 40000,
   42500, 44500, 45500, 46000, 45000, 42000, 38000, 33000, 29000];
@@ -73,14 +73,14 @@ export function rowValue(row, key) {
   return FIELDS[key].group === 'spectrum' ? row.spectrum[FIELDS[key].channelIndex]?.value : row[key];
 }
 
-export function toCsv(rows, view = 'all') {
+export function toCsv(rows, view = 'all', simulated = true) {
   const names = { temperature: 'temperatura_vode_c', conductivity: 'ec25_us_cm', turbidity: 'motnost_ntu',
     fluorescenceRaw: 'fluorescenca_napetost_v', fluorescence: 'kalibrirana_fluorescenca_enota_nepotrjena',
     chipTemp1: 'temperatura_cipa_1_c', chipTemp2: 'temperatura_cipa_2_c', chipTemp3: 'temperatura_cipa_3_c', rssi: 'rssi_dbm', snr: 'snr_db' };
   const fields = fieldsForView(view);
   const header = ['prejeto_utc', 'id_naprave', ...fields.map(([key, config]) => config.group === 'spectrum'
-    ? `kanal_${CHANNELS[config.channelIndex]}_${WAVELENGTHS[config.channelIndex]}nm` : names[key]), 'simulirani_podatki'];
+    ? `kanal_${CHANNELS[config.channelIndex]}_${WAVELENGTHS[config.channelIndex]}nm` : names[key]), 'st_meritev', 'simulirani_podatki'];
   const decimal = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '';
   return [header.join(';'), ...rows.map(row => [new Date(row.receivedAt).toISOString(), row.unitId,
-    ...fields.map(([key, config]) => decimal(rowValue(row, key), config.digits)), 'da'].join(';'))].join('\r\n');
+    ...fields.map(([key, config]) => decimal(rowValue(row, key), config.digits)), row.count ?? 1, simulated ? 'da' : 'ne'].join(';'))].join('\r\n');
 }

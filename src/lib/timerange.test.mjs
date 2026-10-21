@@ -10,7 +10,8 @@ test('presets follow the newest data; long presets are cut to the available data
   assert.equal(resolve({ preset: '7d' }, { start: 100 * H, end: 168 * H }).from, 100 * H);
   assert.equal(resolve({ preset: 'nonsense' }, bounds).preset, '24h');
   assert.equal(resolve(null, bounds).preset, '24h');
-  assert.equal(PRESETS.length, 6);
+  assert.equal(PRESETS.length, 7);
+  assert.deepEqual(resolve({ preset: 'vse' }, bounds), { from: 0, to: 168 * H, preset: 'vse' });
 });
 
 test('fixed ranges are kept inside the data and at least 30 minutes long', () => {

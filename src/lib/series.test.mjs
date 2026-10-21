@@ -16,6 +16,11 @@ test('missing values and missing samples break the line', () => {
   assert.deepEqual(segments(data, r => r.v), [[0, 1], [2, 3]]);
 });
 
+test('gaps follow the usual spacing, so hourly points join up', () => {
+  const hourly = [0, 1, 2, 5, 6].map(h => ({ receivedAt: t0 + h * 3600000, v: h }));
+  assert.deepEqual(segments(hourly, r => r.v), [[0, 1, 2], [3, 4]]);
+});
+
 test('no valid values gives no runs', () => {
   assert.deepEqual(segments(rows([NaN, NaN]), r => r.v), []);
   assert.deepEqual(segments([], r => r.v), []);

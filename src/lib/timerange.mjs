@@ -10,6 +10,7 @@ export const PRESETS = [
   { id: '24h', label: 'Zadnjih 24 ur', ms: 24 * HOUR },
   { id: '2d', label: 'Zadnja 2 dneva', ms: 48 * HOUR },
   { id: '7d', label: 'Zadnjih 7 dni', ms: 168 * HOUR },
+  { id: 'vse', label: 'Vse', ms: Infinity }, // from the first reading
 ];
 export const DEFAULT = { preset: '24h' };
 export const MIN_SPAN = 30 * 60000; // at least 7 five-minute samples
