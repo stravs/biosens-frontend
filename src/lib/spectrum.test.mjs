@@ -1,50 +1,48 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DEMO_REFERENCE, indicators, transmission, wavelengthColor } from './spectrum.mjs';
+import { ALERT_KEYS, baseline, indicators, transmission, wavelengthColor } from './spectrum.mjs';
 import { buildDemoData } from './app.mjs';
+import { createDemoRules } from './demo-rules.mjs';
+import { detectEvents } from './monitoring.mjs';
 
 const WL = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940];
-const spectrumFrom = factors => WL.map((wavelength, i) => ({ wavelength, value: DEMO_REFERENCE[i] * factors(wavelength) }));
+const NORMAL = WL.map((_, i) => 20000 + i * 1000); // any per-channel normal works
+const spectrumFrom = factors => WL.map((wavelength, i) => ({ wavelength, value: NORMAL[i] * factors(wavelength) }));
+const near = (a, b) => Math.abs(a - b) < 1e-9;
 
-test('clean water is 100 % on every channel and has no indicator signal', () => {
-  const clean = spectrumFrom(() => 1);
-  assert.ok(transmission(clean).every(c => Math.abs(c.value - 100) < 1e-9));
-  for (const [name, value] of Object.entries(indicators(clean))) assert.ok(Math.abs(value) < 1e-9, name);
+test('baseline is the per-channel median', () => {
+  const rows = [0.9, 1, 1.2].map(f => ({ spectrum: spectrumFrom(() => f) }));
+  assert.deepEqual(baseline(rows), NORMAL);
 });
 
-test('mud dims all channels evenly: overall rises, algae stays zero', () => {
-  const i = indicators(spectrumFrom(() => 0.9));
-  assert.ok(Math.abs(i.overall - 10) < 1e-9);
-  assert.ok(Math.abs(i.blue - 10) < 1e-9);
-  assert.ok(Math.abs(i.algae) < 1e-9);
-  assert.ok(Math.abs(i.colour) < 1e-9);
-  assert.ok(Math.abs(i.cyano) < 1e-9);
+test('a normal reading is 100 % on every channel and every indicator is 0', () => {
+  const normal = spectrumFrom(() => 1);
+  assert.ok(transmission(normal, NORMAL).every(c => near(c.value, 100)));
+  for (const [name, value] of Object.entries(indicators(normal, NORMAL))) assert.ok(near(value, 0), name);
 });
 
-test('a dip at 610 nm shows up as cyanobacteria only', () => {
-  const i = indicators(spectrumFrom(nm => (nm === 610 ? 0.96 : 1)));
-  assert.ok(Math.abs(i.cyano - 4) < 1e-9);
-  assert.ok(Math.abs(i.algae) < 1e-9);
-  assert.ok(Math.abs(i.colour) < 1e-9);
+test('more mud dims all channels evenly: only mud rises', () => {
+  const i = indicators(spectrumFrom(() => 0.9), NORMAL);
+  assert.ok(near(i.mud, 10));
+  for (const key of ALERT_KEYS) assert.ok(near(i[key], 0), key);
 });
 
-test('water colour ignores mud but follows blue-end loss', () => {
-  const muddyBrown = indicators(spectrumFrom(nm => 0.9 * (nm <= 435 ? 0.95 : 1)));
-  const brown = indicators(spectrumFrom(nm => (nm <= 435 ? 0.95 : 1)));
-  assert.ok(Math.abs(brown.colour - 5) < 1e-9);
-  assert.ok(muddyBrown.blue > brown.blue + 9); // raw blue loss jumps with mud...
-  assert.ok(Math.abs(muddyBrown.colour - 4.5) < 1e-9); // ...colour stays (mud also dims the brown part)
+test('a dip at 680 nm is algae, at 610 nm blue-green algae', () => {
+  const algae = indicators(spectrumFrom(nm => (nm === 680 ? 0.95 : 1)), NORMAL);
+  assert.ok(near(algae.algae, 5) && near(algae.cyano, 0) && near(algae.brown, 0));
+  const cyano = indicators(spectrumFrom(nm => (nm === 610 ? 0.96 : 1)), NORMAL);
+  assert.ok(near(cyano.cyano, 4) && near(cyano.algae, 0) && near(cyano.brown, 0));
 });
 
-test('a dip at 680 nm shows up as algae only', () => {
-  const i = indicators(spectrumFrom(nm => (nm === 680 ? 0.95 : 1)));
-  assert.ok(Math.abs(i.algae - 5) < 1e-9);
-  assert.ok(Math.abs(i.blue) < 1e-9);
+test('brown follows blue-end loss and ignores mud', () => {
+  const brown = indicators(spectrumFrom(nm => (nm <= 435 ? 0.95 : 1)), NORMAL);
+  const muddyBrown = indicators(spectrumFrom(nm => 0.9 * (nm <= 435 ? 0.95 : 1)), NORMAL);
+  assert.ok(near(brown.brown, 5));
+  assert.ok(near(muddyBrown.brown, 4.5)); // mud also dims the brown part a little
 });
 
-test('blue-end loss shows up in the blue indicator', () => {
-  const i = indicators(spectrumFrom(nm => (nm <= 435 ? 0.92 : 1)));
-  assert.ok(Math.abs(i.blue - 8) < 1e-9);
+test('cleaner than normal gives negative values', () => {
+  assert.ok(indicators(spectrumFrom(() => 1.05), NORMAL).mud < 0);
 });
 
 test('wavelength colours: visible are coloured, near-infrared grey', () => {
@@ -52,9 +50,11 @@ test('wavelength colours: visible are coloured, near-infrared grey', () => {
   assert.equal(wavelengthColor(860), '#9aa3ad');
 });
 
-test('demo spectra stay near clean water (90-101 %)', () => {
-  const rows = buildDemoData(1, Date.parse('2026-10-22T12:03:00Z'));
-  for (const row of [rows[0], rows.at(-1)]) {
-    transmission(row.spectrum).forEach(c => assert.ok(c.value > 90 && c.value <= 101, `${c.wavelength}: ${c.value}`));
-  }
+test('demo week: a brown event shows up against the normal, and readings stay close to normal', () => {
+  const raw = buildDemoData(1, Date.parse('2026-10-22T12:03:00Z'));
+  const reference = baseline(raw);
+  const rows = raw.map(r => ({ ...r, ...indicators(r.spectrum, reference) }));
+  transmission(rows.at(-1).spectrum, reference).forEach(c => assert.ok(c.value > 90 && c.value < 110, `${c.wavelength}: ${c.value}`));
+  const events = detectEvents(rows, createDemoRules(), ALERT_KEYS);
+  assert.ok(events.some(e => e.key === 'brown'));
 });

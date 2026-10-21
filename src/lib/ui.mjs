@@ -1,10 +1,10 @@
 // Simple page: three views (everyone / expert / maintenance). All data is simulated.
 import { FIELDS, buildDemoData, fieldsForView, rowValue, toCsv } from './app.mjs';
-import { assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
+import { MAIN_FIELDS, assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 import { STORAGE_KEY, loadSettings, validateSettings } from './settings.mjs';
 import { describe, eventText } from './plain.mjs';
 import { mergeSpans, segments, ticks } from './series.mjs';
-import { indicators, transmission, wavelengthColor } from './spectrum.mjs';
+import { ALERT_KEYS, baseline, indicators, transmission, wavelengthColor } from './spectrum.mjs';
 import { DEFAULT, PRESETS, clamp, fromInputValue, fromQuery, resolve, shift, snapToPreset, toInputValue, toQuery, zoomOut } from './timerange.mjs';
 
 const MAIN = {
@@ -23,9 +23,24 @@ const WORD = { unusual: 'Nenavadno' };
 const LABEL = { temperature: 'Temperatura', turbidity: 'Motnost', conductivity: 'Prevodnost',
   fluorescenceRaw: 'Fluorescenca', fluorescence: 'Umerjena fluorescenca' };
 const AXIS_DIGITS = { temperature: 1, turbidity: 1, conductivity: 0, fluorescenceRaw: 2, fluorescence: 1 };
+// Spectrometer indicators: % more light lost than this device's normal (0 = as usual).
+const SPEC = [
+  { key: 'mud', title: 'Mulj in delci', hint: 'vsi kanali' },
+  { key: 'brown', title: 'Rjava barva', hint: 'modri del, brez vpliva mulja' },
+  { key: 'algae', title: 'Alge', hint: '680 nm' },
+  { key: 'cyano', title: 'Modrozelene alge', hint: '610 nm' },
+];
+const SPEC_BY_KEY = Object.fromEntries(SPEC.map(s => [s.key, s]));
+// Chart options for a spectrometer indicator (stored on the row, not in FIELDS).
+const specMeta = key => SPEC_BY_KEY[key] ? { value: r => r[key], title: SPEC_BY_KEY[key].title, unit: '%', digits: 1, axisDigits: 1 } : {};
+// Name, unit and digits for any measurement that can raise an event.
+const info = key => SPEC_BY_KEY[key] ? { name: SPEC_BY_KEY[key].title, unit: '%', digits: 1 }
+  : { name: LABEL[key], unit: FIELDS[key].unit, digits: MAIN[key].digits };
+const EVENT_KEYS = [...MAIN_FIELDS, ...ALERT_KEYS];
 
 const $ = id => document.getElementById(id);
-const fmt = (value, digits) => Number.isFinite(value) ? value.toFixed(digits).replace('.', ',') : '–';
+// Rounds first so tiny negatives show as 0 instead of -0.
+const fmt = (value, digits) => Number.isFinite(value) ? ((Math.round(value * 10 ** digits) / 10 ** digits) || 0).toFixed(digits).replace('.', ',') : '–';
 const clock = ms => new Date(ms).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 const time = ms => new Date(ms).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -40,7 +55,9 @@ function plot(rows, key, rule = {}, marks = [], meta = {}) {
   const x = i => PAD + i / Math.max(1, rows.length - 1) * (W - 2 * PAD);
   const y = v => H - PAD_Y - (v - lo) / (hi - lo) * (H - 2 * PAD_Y);
   const index = ms => { const i = rows.findIndex(r => r.receivedAt >= ms); return i < 0 ? rows.length - 1 : i; };
-  const band = rule.min != null ? `<rect class="band" x="0" width="${W}" y="${y(rule.max)}" height="${y(rule.min) - y(rule.max)}"/>` : '';
+  // Normal band; with only an upper limit (spectrometer) it runs from the bottom of the chart.
+  const band = rule.min != null || rule.max != null
+    ? `<rect class="band" x="0" width="${W}" y="${y(rule.max ?? hi)}" height="${y(rule.min ?? lo) - y(rule.max ?? hi)}"/>` : '';
   const grid = [lo, mid, hi].map(v => `<line class="grid" x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" vector-effect="non-scaling-stroke"/>`).join('');
   const spans = mergeSpans(marks).map(m => { const a = x(index(m.start)), b = x(index(m.end)); return `<rect class="mark" x="${a}" width="${Math.max(4, b - a)}" y="0" height="${H}"/>`; }).join('');
   const path = segments(rows, val).map(run => run.map((i, k) => `${k ? 'L' : 'M'}${x(i).toFixed(1)},${y(values[i]).toFixed(1)}`).join('')).join('');
@@ -119,7 +136,10 @@ function syncedHover(container, timeEl = null, onSelect = null) {
   return { set(newRows, newCharts) { rows = newRows; charts = newCharts; hide(); } };
 }
 
-const rows = buildDemoData(1);
+// Spectrometer readings are compared with the device's own normal: the median of the loaded week.
+const raw = buildDemoData(1);
+const reference = baseline(raw);
+const rows = raw.map(r => ({ ...r, ...indicators(r.spectrum, reference) }));
 let savedSettings = null;
 try { savedSettings = localStorage.getItem(STORAGE_KEY); } catch {}
 const settings = loadSettings(savedSettings);
@@ -127,7 +147,7 @@ const rules = settings.rules;
 const latest = rows.at(-1);
 
 // Everyone: one big answer + four cards.
-const { status } = currentStatus(rows, rules);
+const { status } = currentStatus(rows, rules, ALERT_KEYS);
 $('status').dataset.status = status;
 $('status').innerHTML = `<span class="icon" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}
   <small class="when">Zadnja meritev<br>${time(latest.receivedAt)}</small>`;
@@ -155,7 +175,8 @@ $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
 }).join('');
 
 // Everyone: notable events in plain words, newest first.
-const events = eventsInRange(detectEvents(rows, rules), latest.receivedAt, 24).slice(0, 6);
+const allEvents = detectEvents(rows, rules, EVENT_KEYS);
+const events = eventsInRange(allEvents, latest.receivedAt, 24).slice(0, 6);
 $('events').innerHTML = events.length
   ? events.map((ev, i) => `<li data-status="${ev.severity}"><button type="button" data-event="${i}">
       <b>${time(ev.start)}</b><em>${eventText(ev)}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span><i aria-hidden="true">›</i></button></li>`).join('')
@@ -164,13 +185,13 @@ $('events').innerHTML = events.length
 // Event detail: what happened, when, and the measurement around it.
 const dialogHover = syncedHover($('event-body'));
 function openEvent(ev) {
-  const f = FIELDS[ev.key], rule = rules[ev.key] ?? {};
-  const unit = f.unit, digits = MAIN[ev.key].digits;
+  const { name, unit, digits } = info(ev.key), rule = rules[ev.key] ?? {};
   const around = rows.filter(r => r.receivedAt >= ev.start - 2 * 3600000 && r.receivedAt <= ev.end + 2 * 3600000);
   const peak = rows.find(r => r.receivedAt === ev.peak);
-  const p = plot(around, ev.key, rule, [ev]);
-  const why = ev.type === 'range'
-    ? `Običajno območje je ${fmt(rule.min, digits)}–${fmt(rule.max, digits)} ${unit}.`
+  const p = plot(around, ev.key, rule, [ev], specMeta(ev.key));
+  const why = ev.type === 'range' && rule.min == null
+    ? `Opozorimo, ko je za ${fmt(rule.max, digits)} ${unit} več kot običajno.`
+    : ev.type === 'range' ? `Običajno območje je ${fmt(rule.min, digits)}–${fmt(rule.max, digits)} ${unit}.`
     : `V eni uri se je spremenilo za ${fmt(ev.magnitude, digits)} ${unit}. Opozorimo pri ${fmt(rule.change, digits)} ${unit}.`;
   $('event-body').innerHTML = `<h2>${eventText(ev)}</h2>
     <dl class="event-facts">
@@ -179,7 +200,7 @@ function openEvent(ev) {
       <div><dt>Vrhunec</dt><dd>${clock(ev.peak)} · ${fmt(peak?.[ev.key], digits)} ${unit}</dd></div>
     </dl>
     <p class="muted">${why}</p>
-    <article class="chart ts"><h3>${LABEL[ev.key]}<span class="readout"></span></h3>${p.html}${p.axis}</article>
+    <article class="chart ts"><h3>${name}<span class="readout"></span></h3>${p.html}${p.axis}</article>
     <p class="muted">Rumeni pas = čas dogodka. Zeleni pas = običajno območje.</p>`;
   dialogHover.set(around, [{ key: ev.key, el: $('event-body').querySelector('.ts'), ...p }]);
   $('event-dialog').showModal();
@@ -189,21 +210,14 @@ document.querySelectorAll('[data-event]').forEach(b => b.addEventListener('click
 $('event-close').addEventListener('click', () => $('event-dialog').close());
 $('event-dialog').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
-// Spectrometer, shown as in the WaQuMoS report: light that gets through, in % of clean water.
-const SPEC = [
-  { key: 'overall', title: 'Slabljenje – vsi kanali', hint: 'mulj, delci', digits: 1 },
-  { key: 'blue', title: 'Slabljenje – modri del', hint: '410–435 nm · železo, mangan', digits: 1 },
-  { key: 'colour', title: 'Obarvanost vode', hint: 'modri del brez vpliva mulja · huminske snovi, železo, mangan', digits: 2 },
-  { key: 'algae', title: 'Alge – 680 nm', hint: 'klorofil, glede na sosednja kanala', digits: 2 },
-  { key: 'cyano', title: 'Cianobakterije – 610 nm', hint: 'fikocianin, glede na sosednja kanala', digits: 2 },
-];
-const specRows = rows.map(r => ({ receivedAt: r.receivedAt, ...indicators(r.spectrum) }));
+// Spectrometer: light that gets through, in % of this device's normal.
 const NM_MIN = 400, NM_MAX = 950;
 const nmX = nm => (nm - NM_MIN) / (NM_MAX - NM_MIN) * 100; // % across the plot
 
 function spectrumCard(range) {
-  const now = transmission(range.at(-1).spectrum), then = transmission(range[0].spectrum);
-  const lo = Math.floor(Math.min(...now.map(c => c.value), ...then.map(c => c.value)) - 1), hi = 101;
+  const now = transmission(range.at(-1).spectrum, reference), then = transmission(range[0].spectrum, reference);
+  const all = [...now, ...then].map(c => c.value);
+  const lo = Math.floor(Math.min(...all) - 1), hi = Math.max(101, Math.ceil(Math.max(...all)) + 1);
   const w = 800, h = 220;
   const x = nm => nmX(nm) / 100 * w, y = v => h - 12 - (v - lo) / (hi - lo) * (h - 24);
   const line = (t, cls) => `<path class="${cls}" vector-effect="non-scaling-stroke" d="${t.map((c, i) => `${i ? 'L' : 'M'}${x(c.wavelength).toFixed(1)},${y(c.value).toFixed(1)}`).join('')}"/>`;
@@ -216,11 +230,11 @@ function spectrumCard(range) {
   const ticksNm = [400, 500, 600, 700, 800, 900].map(nm => `<span style="left:${nmX(nm)}%">${nm}</span>`).join('');
   const earlier = `Na začetku (${time(range[0].receivedAt)})`;
   return `<h3>Koliko svetlobe pride skozi vodo</h3>
-    <p class="legend"><span><span class="key"></span> Zdaj</span><span><span class="key then"></span> ${earlier}</span><span><span class="key ref"></span> Čista voda = 100 %</span></p>
+    <p class="legend"><span><span class="key"></span> Zdaj</span><span><span class="key then"></span> ${earlier}</span><span><span class="key ref"></span> Običajno = 100 %</span></p>
     <div class="plot spec-plot">
       <div class="ylabels" aria-hidden="true">${yl}</div>
       <div class="area">
-        <div class="regions" aria-hidden="true"><b style="left:${nmX(410)}%">železo, mangan</b><b class="cy" style="left:${nmX(610)}%">ciano&shy;bakterije</b><b style="left:${nmX(680)}%">alge</b></div>
+        <div class="regions" aria-hidden="true"><b style="left:${nmX(410)}%">rjava barva</b><b class="cy" style="left:${nmX(610)}%">modro&shy;zelene alge</b><b style="left:${nmX(680)}%">alge</b></div>
         <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Prepustnost po valovnih dolžinah">${grid}${line(then, 'line then')}${line(now, 'line')}</svg>
         ${dots}
       </div>
@@ -232,8 +246,8 @@ function spectrumCard(range) {
 function heatmap(range) {
   const cols = Math.min(96, range.length), size = range.length / cols;
   const buckets = Array.from({ length: cols }, (_, i) => range.slice(Math.floor(i * size), Math.floor((i + 1) * size)));
-  const grid = buckets.map(b => transmission(b.at(-1).spectrum).map((c, ch) => ({ wavelength: c.wavelength,
-    value: b.reduce((s, r) => s + transmission(r.spectrum)[ch].value, 0) / b.length })));
+  const grid = buckets.map(b => transmission(b.at(-1).spectrum, reference).map((c, ch) => ({ wavelength: c.wavelength,
+    value: b.reduce((s, r) => s + transmission(r.spectrum, reference)[ch].value, 0) / b.length })));
   const lo = Math.min(98, Math.floor(Math.min(...grid.flat().map(c => c.value)))); // one scale shared by every channel
   const nm = grid[0].map(c => c.wavelength);
   const cells = grid.map((col, i) => col.map((c, ch) => {
@@ -241,7 +255,7 @@ function heatmap(range) {
     return `<rect x="${i}" y="${ch}" width="1.02" height="1.02" style="fill:color-mix(in oklab, var(--accent) ${p}%, var(--card))"><title>${c.wavelength} nm · ${time(buckets[i][0].receivedAt)} · ${fmt(c.value, 1)} %</title></rect>`;
   }).join('')).join('');
   return `<h3>Vsi kanali skozi čas</h3>
-    <p class="legend scale-legend"><span>100 % (čista voda)</span><i></i><span>${lo} %</span><span class="muted">temneje = manj svetlobe</span></p>
+    <p class="legend scale-legend"><span>100 % (običajno)</span><i></i><span>${lo} %</span><span class="muted">temneje = manj svetlobe</span></p>
     <div class="heat"><div class="heat-labels">${nm.map(wl => `<span><i style="background:${wavelengthColor(wl)}"></i>${wl}</span>`).join('')}</div>
       <svg viewBox="0 0 ${cols} ${nm.length}" preserveAspectRatio="none" role="img" aria-label="Prepustnost vseh kanalov skozi čas">${cells}</svg></div>
     <div class="axis heat-axis"><span>${time(range[0].receivedAt)}</span><span>${time(range.at(-1).receivedAt)}</span></div>`;
@@ -252,7 +266,6 @@ function heatmap(range) {
 const LINES = ['temperature', 'turbidity', 'conductivity', 'fluorescenceRaw', 'fluorescence'];
 // Table columns: the charted measurements first (same order and names), then the 18 spectral channels.
 const SAMPLE = [...LINES.map(key => [key, FIELDS[key]]), ...fieldsForView('sample').filter(([key]) => !LINES.includes(key))];
-const allEvents = detectEvents(rows, rules);
 const bounds = { start: rows[0].receivedAt, end: latest.receivedAt };
 const zoomTo = (from, to) => setRange({ from, to });
 const graphsHover = syncedHover($('graphs'), $('stack-time'), zoomTo);
@@ -291,11 +304,10 @@ function drawData() {
   graphsHover.set(range, LINES.map((key, i) => ({ key, el: $('graphs').children[i], ...plots[i] })));
   $('spectrum').innerHTML = spectrumCard(range);
   $('spec-heat').innerHTML = heatmap(range);
-  const specRange = inRange(specRows);
-  const specPlots = SPEC.map(s => plot(specRange, s.key, {}, [], { value: r => r[s.key], title: s.title, unit: '%', digits: s.digits, axisDigits: s.digits }));
+  const specPlots = SPEC.map(s => plot(range, s.key, rules[s.key], allEvents.filter(e => e.key === s.key && e.end >= from && e.start <= to), specMeta(s.key)));
   $('spec-graphs').innerHTML = SPEC.map((s, i) => `<div class="ts row">
     <h3>${s.title}<small class="hint">${s.hint}</small><span class="readout"></span></h3>${specPlots[i].html}</div>`).join('') + specPlots[0].axis;
-  specHover.set(specRange, SPEC.map((s, i) => ({ key: s.key, el: $('spec-graphs').children[i], ...specPlots[i] })));
+  specHover.set(range, SPEC.map((s, i) => ({ key: s.key, el: $('spec-graphs').children[i], ...specPlots[i] })));
   $('table-head').innerHTML = `<tr><th>Čas</th>${SAMPLE.map(([key, f]) => `<th>${LABEL[key] ?? f.title}${f.unit ? `<br>${f.unit}` : ''}</th>`).join('')}</tr>`;
   $('readings').innerHTML = range.slice().reverse().map(row =>
     `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
@@ -359,6 +371,8 @@ function fillSettings(s) {
   $('rule-fields').innerHTML = Object.entries(MAIN).map(([key, { name }]) => `<fieldset class="set-card"><legend>${name}<span class="unit">${FIELDS[key].unit}</span></legend>
     <div class="set-grid">${RULE_INPUTS.map(([field, label]) => `<label>${label}<input data-rule="${key}" data-field="${field}" type="number" inputmode="decimal" step="any"
       value="${inputValue(s.rules[key]?.[field])}"></label>`).join('')}</div></fieldset>`).join('');
+  $('spec-fields').innerHTML = ALERT_KEYS.map(key => `<label><span>${SPEC_BY_KEY[key].title} <span class="unit">%</span></span><input data-rule="${key}" data-field="max"
+    type="number" inputmode="decimal" step="any" value="${inputValue(s.rules[key]?.max)}"></label>`).join('');
   DEVICE_INPUTS.forEach(([id, field]) => { $(id).value = inputValue(s[field]); });
   $('s-error').textContent = '';
 }

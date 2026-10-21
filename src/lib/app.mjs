@@ -1,8 +1,10 @@
 // Demo data and CSV export. The page itself lives in ui.mjs.
-import { DEMO_REFERENCE } from './spectrum.mjs';
 
 const CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'R', 'I', 'S', 'J', 'T', 'U', 'V', 'W', 'K', 'L'];
 const WAVELENGTHS = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940];
+// Made-up raw lamp counts per channel for the simulation.
+const DEMO_LAMP = [21000, 23500, 26000, 28500, 31000, 33500, 36000, 38000, 40000,
+  42500, 44500, 45500, 46000, 45000, 42000, 38000, 33000, 29000];
 export const FIELDS = {
   temperature: { title: 'Temperatura vode', unit: '°C', digits: 3, hint: 'Kako topla je voda na iztoku.', accent: '#3e7c66', tint: '#edf4ec' },
   conductivity: { title: 'Prevodnost vode · EC25', unit: 'µS/cm', digits: 1, hint: 'Kako dobro voda prevaja elektriko.', accent: '#ab8542', tint: '#faf3e6' },
@@ -31,7 +33,7 @@ export function buildDemoData(deviceId, now = Date.now()) {
     const ripple = Math.sin(index * 1.71 + deviceId) * 0.08;
     const fluorescenceRaw = Number((2.12 - deviceId * 0.03 + Math.cos(phase) * 0.025 + ripple * 0.02).toFixed(4));
     const turbidity = Number((3.1 + deviceId * 0.4 + Math.sin(phase * 2) * 0.35 + Math.exp(-(((index - 1938) / 16) ** 2)) * 2 + ripple).toFixed(2));
-    // Spectrum = clean-water reading x transmission. Particles dim all channels (follows turbidity),
+    // Spectrum = lamp counts x share of light that gets through. Particles dim all channels (follows turbidity),
     // a little extra loss at the blue end, and a small algae dip at 680 nm that grows over the week.
     // A brown pulse ~21 h ago (blue end) and a cyanobacteria dip at 610 nm rising over the last ~12 h.
     const algae = 0.004 + 0.012 * index / 2016 + Math.sin(phase) * 0.002;
@@ -41,7 +43,7 @@ export function buildDemoData(deviceId, now = Date.now()) {
       const nm = WAVELENGTHS[i];
       const loss = 0.006 * turbidity + (nm <= 460 ? (0.012 + brown) * (480 - nm) / 70 : 0)
         + (nm === 680 ? algae : 0) + (nm === 610 ? cyano : 0) + Math.sin(index * 0.37 + i * 2.1) * 0.0004;
-      return { channel, wavelength: nm, value: Math.round(DEMO_REFERENCE[i] * (1 - loss) * 10) / 10 };
+      return { channel, wavelength: nm, value: Math.round(DEMO_LAMP[i] * (1 - loss) * 10) / 10 };
     });
     return {
       unitId: deviceId, receivedAt: end - (2016 - index) * 300000,

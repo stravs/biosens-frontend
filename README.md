@@ -26,6 +26,8 @@ Za samodejno objavo ob vsakem pushu povežite repozitorij v Cloudflare (Workers 
 
 - **Voda** – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
 - **Podatki** – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spektrometer; tabela vseh meritev; prenos CSV.
+- **Naprava** – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
+- **Nastavitve** – običajna območja in prag hitre spremembe za vsako meritev, meje za opozorila spektrometra, čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`).
 
 ## Izbira časa (Podatki)
 
@@ -39,20 +41,18 @@ Kot v orodjih za spremljanje (Grafana, Datadog), logika v `src/lib/timerange.mjs
 
 ## Spektrometer
 
-Kot v poročilu WaQuMoS: naprava meri, koliko svetlobe halogenske žarnice pride skozi vodo na 18 kanalih (AS7265x, 410–940 nm, vsak širok ~20 nm). Vzorec se primerja s čisto (deionizirano) vodo = 100 % prepustnosti (`src/lib/spectrum.mjs`).
+Naprava je poceni: ne meri koncentracij, ampak zazna **spremembe**. Svetloba žarnice gre skozi vodo, 18 kanalov (AS7265x, 410–940 nm) izmeri, koliko je pride skozi. Vsak odčitek se primerja z **običajnim stanjem te naprave** = mediana po kanalih v zadnjem tednu (100 %). Umerjanje s čisto vodo ni potrebno (`src/lib/spectrum.mjs`).
 
-- **Spekter**: prepustnost v % po valovni dolžini, zdaj in na začetku obdobja, z barvnim trakom kanalov.
-- **Kazalniki skozi čas** (odstotne točke izgubljene svetlobe):
-  - vsi kanali – mulj, delci;
-  - modri del 410–435 nm – železo, mangan, huminske snovi, a tudi mulj;
-  - obarvanost vode = modri del minus izguba pri 860 nm. Pri 860 nm raztopljene snovi ne vpijajo, svetlobo zadržijo samo delci, zato se vpliv mulja odšteje in ostane raztopljena barva (huminske snovi, železo, mangan; med seboj jih spekter ne loči);
-  - alge = dodatna izguba pri 680 nm nad črto med 645 in 705 nm (klorofil; kot metoda FLH);
-  - cianobakterije = dodatna izguba pri 610 nm nad črto med 585 in 645 nm (fikocianin). Kanal je širok ~20 nm, zato zazna le izrazitejše cvetenje; brez umerjanja z laboratorijskimi vzorci kaže samo spremembo, ne koncentracije.
+- **Spekter**: prepustnost v % običajnega po valovni dolžini, zdaj in na začetku obdobja.
+- **Kazalniki skozi čas** – za koliko % več svetlobe se izgubi kot običajno (0 = kot običajno, manj od 0 = manj kot običajno):
+  - **Mulj in delci** – vsi kanali;
+  - **Rjava barva** – modri del (410–435 nm) minus 860 nm. Pri 860 nm svetlobo zadržijo samo delci, zato se mulj odšteje;
+  - **Alge** – dodatna izguba pri 680 nm glede na sosednja kanala (645, 705 nm);
+  - **Modrozelene alge** – dodatna izguba pri 610 nm glede na sosednja kanala (585, 645 nm).
+- **Opozorila**: rjava barva, alge in modrozelene alge sprožijo dogodek (in stanje »Nenavadno«), ko presežejo mejo v Nastavitvah. Mulj ne, ker ga že pokriva senzor motnosti.
 - **Toplotna karta**: vsi kanali skozi čas na eni skupni lestvici.
 
-`DEMO_REFERENCE` (odčitek čiste vode po kanalih) je izmišljen. Za pravo uporabo ga je treba izmeriti z deionizirano vodo ob umerjanju.
-- **Naprava** – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
-- **Nastavitve** – običajna območja in prag hitre spremembe za vsako meritev, čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`).
+Če je voda dalj časa drugačna, se ji »običajno« sčasoma prilagodi.
 
 Privzete meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 
@@ -84,6 +84,6 @@ Pogled **Voda** vsako meritev prevede v preprost odgovor (`src/lib/plain.mjs`):
 | Fluorescenca | Organsko onesnaženje | manj / kot običajno / več kot običajno (glede na nastavljeno območje) | poročilo WaQuMoS: UV fluorescenca, podobna triptofanu, kot kazalnik fekalnega onesnaženja (E. coli) |
 
 Fluorescenca je v voltih in ni umerjena, zato se primerja samo z običajnim območjem naprave. Ne šteje bakterij.
-Spektrometer bi po poročilu lahko prepoznal alge (680 nm), mulj in železo (350–400 nm), vendar to še ni umerjeno, zato ga pogled Voda ne prikazuje.
+Spektrometer na pogledu Voda nima kartice; njegove spremembe (rjava barva, alge, modrozelene alge) se pokažejo med posebnimi dogodki.
 
 Viri: poročilo WaQuMoS (TLF, alge, mulj, železo); [WEDC: merjenje motnosti](https://wedc-knowledge.lboro.ac.uk/resources/booklets/G031-Measuring-turbidity-in-water-supplies-online.pdf); [Atlas Scientific: prevodnost vode](https://atlas-scientific.com/blog/water-conductivity-range/); [BGS: TLF in fekalno onesnaženje](https://www.bgs.ac.uk/news/real-time-detection-of-faecally-contaminated-drinking-water/).

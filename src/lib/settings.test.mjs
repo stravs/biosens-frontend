@@ -26,3 +26,17 @@ test('rejects bad device limits', () => {
   assert.throws(() => validateSettings({ ...defaultSettings(), offlineMinutes: 0 }));
   assert.throws(() => validateSettings({ ...defaultSettings(), rssiWeak: -80 }));
 });
+
+test('spectrometer limits: empty or above zero', () => {
+  const s = defaultSettings();
+  s.rules.brown = { max: null };
+  assert.doesNotThrow(() => validateSettings(s));
+  s.rules.brown = { max: 0 };
+  assert.throws(() => validateSettings(s));
+});
+
+test('settings saved before spectrometer limits existed get the defaults', () => {
+  const old = defaultSettings();
+  delete old.rules.cyano;
+  assert.deepEqual(loadSettings(JSON.stringify(old)).rules.cyano, defaultSettings().rules.cyano);
+});

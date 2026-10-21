@@ -59,6 +59,10 @@ const EVENT_TEXT = {
   turbidity: { change: ['Bistrost se je hitro zmanjšala', 'Bistrost se je hitro povečala'], range: ['Bistrost je bila manjša kot običajno', 'Bistrost je bila večja kot običajno'] },
   conductivity: { change: ['Mineralov je hitro naraslo', 'Mineralov je hitro upadlo'], range: ['Mineralov je bilo več kot običajno', 'Mineralov je bilo manj kot običajno'] },
   fluorescenceRaw: { change: ['Organsko onesnaženje je hitro naraslo', 'Organsko onesnaženje je hitro upadlo'], range: ['Organskega onesnaženja je bilo več kot običajno', 'Organskega onesnaženja je bilo manj kot običajno'] },
+  // Spectrometer: alerts only above normal.
+  brown: { range: ['Voda je postala bolj rjava', 'Voda je bila manj rjava kot običajno'] },
+  algae: { range: ['V vodi je bilo več alg kot običajno', 'V vodi je bilo manj alg kot običajno'] },
+  cyano: { range: ['V vodi je bilo več modrozelenih alg kot običajno', 'V vodi je bilo manj modrozelenih alg kot običajno'] },
 };
 
 export function eventText(event) {

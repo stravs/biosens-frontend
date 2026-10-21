@@ -229,8 +229,8 @@ section > h2:first-child, section > div:first-child > h2:first-child, section > 
 .regions b:last-child { transform: translateX(-4px); }
 .regions b.cy { transform: translateX(-50%); }
 @media (max-width: 759px) {
-  .regions b { font-size: 12px; }
-  .regions b.cy { width: min-content; white-space: normal; hyphens: manual; line-height: 1.15; text-align: center; }
+  .regions b { width: min-content; font-size: 12px; white-space: normal; hyphens: manual; line-height: 1.15; }
+  .regions b.cy { text-align: center; }
 }
 .regions b:first-child { max-width: 34%; white-space: normal; line-height: 1.15; } /* wraps on phones instead of overlapping "alge" */
 .spec-strip { margin-left: 52px; }

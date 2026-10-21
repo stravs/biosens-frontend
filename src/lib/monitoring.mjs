@@ -37,19 +37,20 @@ export function assessPoint(rows, index, key, rule = {}) {
     changed: delta != null && rule.change != null && Math.abs(delta) >= rule.change };
 }
 
-export function currentStatus(rows, rules = {}) {
+// extra: keys that can make the status unusual but don't count towards coverage (spectrometer alerts).
+export function currentStatus(rows, rules = {}, extra = []) {
   if (!rows.length) return { status: 'unknown', covered: 0 };
   const latest = rows.at(-1);
-  const points = MAIN_FIELDS.map(key => assessPoint(rows, rows.length - 1, key, rules[key]));
+  const points = [...MAIN_FIELDS, ...extra].map(key => assessPoint(rows, rows.length - 1, key, rules[key]));
   const covered = MAIN_FIELDS.filter(key => rules[key]?.min != null && rules[key]?.max != null && Number.isFinite(latest[key])).length;
   const status = points.some(point => point.severity === 'unusual' || point.changed) ? 'unusual'
     : covered === MAIN_FIELDS.length ? 'normal' : 'unknown';
   return { status, covered };
 }
 
-export function detectEvents(rows, rules = {}) {
+export function detectEvents(rows, rules = {}, keys = MAIN_FIELDS) {
   const events = [];
-  for (const key of MAIN_FIELDS) {
+  for (const key of keys) {
     for (const type of ['range', 'change']) {
       let active = null;
       function close(end, interrupted = false) {
