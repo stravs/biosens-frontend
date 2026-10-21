@@ -1,10 +1,10 @@
 // Helpers for time-series charts: honest gaps and simple axis ticks.
+import { usualStep } from './monitoring.mjs';
 // Split points into continuous runs. A run breaks on a missing value or a missing sample (a step over
 // 1.5x the usual one, the median), so the chart shows a gap instead of drawing a line over data that was
 // never measured. Works for readings at any interval and for hourly averages.
 export function segments(rows, value) {
-  const steps = rows.slice(1).map((row, i) => row.receivedAt - rows[i].receivedAt).sort((a, b) => a - b);
-  const usual = steps[Math.floor(steps.length / 2)];
+  const usual = usualStep(rows);
   const runs = [];
   let run = [];
   rows.forEach((row, i) => {

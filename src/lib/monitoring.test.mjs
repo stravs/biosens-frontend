@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAIN_FIELDS, INTERVAL_MS, validateRules, hourChange, assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
+import { MAIN_FIELDS, validateRules, hourChange, assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
 
 // Arbitrary fixtures for algorithm tests only; these are NOT suggested operating limits.
 const base = Date.parse('2026-10-22T00:00:00Z');
+const INTERVAL_MS = 300000; // demo data: one reading every 5 minutes
 const series = values => values.map((value, i) => ({ receivedAt: base + i * INTERVAL_MS, temperature: value, turbidity: 10, conductivity: 10, fluorescenceRaw: 10 }));
 const fullRules = () => Object.fromEntries(MAIN_FIELDS.map(key => [key, { min: 0, max: 20 }]));
 
@@ -98,6 +99,33 @@ test('range filtering preserves the actual onset of events overlapping the windo
   const event = { start: base, end: base + 8 * 3600000 };
   assert.deepEqual(eventsInRange([event], base + 10 * 3600000, 6), [event]);
   assert.equal(eventsInRange([event], base + 20 * 3600000, 6).length, 0);
+});
+
+// Real readings: any interval, never exactly on time.
+const timed = (step, values, jitter = 0) => values.map((value, i) => ({ receivedAt: base + i * step + (i % 2) * jitter,
+  temperature: value, turbidity: 10, conductivity: 10, fluorescenceRaw: 10 }));
+
+test('jittered and non-5-minute readings give one event per excursion, not one per reading', () => {
+  const rules = { temperature: { min: 0, max: 20 } };
+  for (const rows of [timed(300000, [10, 25, 26, 27, 25, 10], 400), timed(124000, [10, ...Array(29).fill(25), 10])]) {
+    const events = detectEvents(rows, rules);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].interrupted, false);
+    assert.equal(events[0].end, rows.at(-1).receivedAt);
+  }
+});
+
+test('one-hour change looks back an hour by time, at any interval', () => {
+  const twoMin = timed(124000, Array.from({ length: 40 }, (_, i) => i));
+  // 124 s apart: an hour is ~29 readings back, not 12.
+  assert.equal(hourChange(twoMin, 39, 'temperature'), 29);
+  assert.equal(hourChange(twoMin, 20, 'temperature'), null); // less than an hour of data
+  const jittered = timed(300000, Array.from({ length: 13 }, (_, i) => i), 400);
+  assert.equal(hourChange(jittered, 12, 'temperature'), 12);
+  assert.equal(detectEvents(jittered, { temperature: { change: 12 } }).filter(e => e.type === 'change').length, 1);
+  // Hourly averages: the previous point is the one an hour ago.
+  assert.equal(hourChange(timed(3600000, [5, 8]), 1, 'temperature'), 3);
+  assert.equal(hourChange(timed(9 * 3600000, [5, 8]), 1, 'temperature'), null);
 });
 
 test('rule validation rejects incomplete, non-finite, inverted and nested-invalid limits', () => {
