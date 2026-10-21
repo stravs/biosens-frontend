@@ -11,6 +11,8 @@ import '../styles.css';
   <script>import '../lib/ui.mjs';</script>
 </head>
 <body>
+  <header class="top">
+  <span class="brand">BioSens</span>
   <nav class="views" aria-label="Pogled">
     <button type="button" data-view="everyone">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>Voda</button>
@@ -18,7 +20,10 @@ import '../styles.css';
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M6 15l4-5 4 3 5-7"/></svg>Podatki</button>
     <button type="button" data-view="maintenance">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10 17h4"/></svg>Naprava</button>
+    <button type="button" data-view="settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Nastavitve</button>
   </nav>
+  </header>
 
   <main>
     <section id="everyone">
@@ -26,20 +31,6 @@ import '../styles.css';
       <div id="cards" class="cards"></div>
       <h2>Posebni dogodki v zadnjih 24 urah</h2>
       <ul id="events" class="events"></ul>
-      <details class="explain">
-        <summary>Kaj pomenijo te meritve?</summary>
-        <dl>
-          <dt>Temperatura</dt>
-          <dd>Toplejša voda lahko zadrži manj kisika.</dd>
-          <dt>Bistrost</dt>
-          <dd>Motnost: koliko drobnih delcev (mulj, alge, prst) lebdi v vodi. Pod 1 NTU je voda videti bistra, pri 5 NTU je že opazno motna, nad 50 NTU je blatna.</dd>
-          <dt>Minerali</dt>
-          <dd>Prevodnost: koliko raztopljenih mineralov in soli je v vodi. Za primerjavo: destilirana voda okoli 1, voda iz pipe in rek 50–800, morje okoli 50.000 µS/cm. Nenadna sprememba pomeni, da je v vodo nekaj prišlo.</dd>
-          <dt>Organsko onesnaženje</dt>
-          <dd>Fluorescenca: naprava posveti v vodo z UV svetlobo. Organske snovi, npr. iz odplak, gnojevke ali od bakterij, ob tem zasvetijo. Več svetlobe pomeni več takih snovi. Naprava ne šteje bakterij.</dd>
-        </dl>
-        <p>Meritve ne povedo, ali je voda varna za pitje.</p>
-      </details>
     </section>
 
     <section id="expert" hidden>
@@ -80,24 +71,50 @@ import '../styles.css';
       <article id="spec-heat" class="chart"></article>
       <p class="muted small">Referenca čiste vode je za prikaz izmišljena. Za pravo uporabo jo je treba izmeriti z deionizirano vodo ob umerjanju naprave.</p>
 
-      <h2>Vse meritve</h2>
-      <p id="table-count" class="muted"></p>
-      <div class="scroll table-box" tabindex="0"><table>
-        <thead id="table-head"></thead>
-        <tbody id="readings"></tbody>
-      </table></div>
-      <button type="button" id="csv" class="big">Prenesi izbrano obdobje (CSV)</button>
+      <details class="collapse">
+        <summary><h2>Vse meritve</h2></summary>
+        <p id="table-count" class="muted"></p>
+        <div class="scroll table-box" tabindex="0"><table>
+          <thead id="table-head"></thead>
+          <tbody id="readings"></tbody>
+        </table></div>
+      </details>
+      <div class="actions"><button type="button" id="csv" class="big">Prenesi izbrano obdobje (CSV)</button></div>
     </section>
 
-    <section id="maintenance" hidden>
-      <h2>Stanje naprave</h2>
-      <dl id="device" class="facts"></dl>
+    <section id="maintenance" class="cols" hidden>
+      <div>
+        <h2>Stanje naprave</h2>
+        <dl id="device" class="facts"></dl>
+      </div>
+      <div>
+        <h2>Zadnji paketi</h2>
+        <div class="scroll"><table>
+          <thead><tr><th>Čas</th><th>RSSI</th><th>SNR</th></tr></thead>
+          <tbody id="packets"></tbody>
+        </table></div>
+      </div>
+    </section>
 
-      <h2>Zadnji paketi</h2>
-      <div class="scroll"><table>
-        <thead><tr><th>Čas</th><th>RSSI</th><th>SNR</th></tr></thead>
-        <tbody id="packets"></tbody>
-      </table></div>
+    <section id="settings" hidden>
+      <form id="settings-form" novalidate>
+        <h2>Običajna območja</h2>
+        <p class="muted">Za vsako meritev nastavite običajno območje (od–do) in mejo za hitro spremembo v eni uri. Meritev izven območja ali s hitrejšo spremembo je označena kot nenavadna. Prazno polje pomeni, da pravilo ni nastavljeno.</p>
+        <div id="rule-fields" class="set-cards"></div>
+
+        <h2>Naprava</h2>
+        <div class="set-card set-grid">
+          <label><span>Brez povezave po <span class="unit">min</span></span><input id="s-offline" type="number" inputmode="decimal" step="any"></label>
+          <label><span>Dober signal od <span class="unit">dBm</span></span><input id="s-rssi-good" type="number" inputmode="decimal" step="any"></label>
+          <label><span>Slab signal pod <span class="unit">dBm</span></span><input id="s-rssi-weak" type="number" inputmode="decimal" step="any"></label>
+        </div>
+
+        <p id="s-error" class="s-error" role="alert"></p>
+        <div class="actions">
+          <button type="button" id="s-reset" class="big secondary">Ponastavi na privzeto</button>
+          <button type="submit" class="big">Shrani</button>
+        </div>
+      </form>
     </section>
   </main>
 

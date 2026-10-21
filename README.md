@@ -5,13 +5,12 @@ Preprosta Astro stran z velikimi črkami. **Vsi podatki so simulirani.**
 ## Zagon
 
 ```sh
-cd frontend
 npm install
 npm run dev        # astro dev --host → http://<ip>:4321
 npm run build      # statična stran v dist/
 ```
 
-## Trije pogledi
+## Pogledi
 
 - **Voda** – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
 - **Podatki** – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spektrometer; tabela vseh meritev; prenos CSV.
@@ -36,8 +35,9 @@ Kot v poročilu WaQuMoS: naprava meri, koliko svetlobe halogenske žarnice pride
 
 `DEMO_REFERENCE` (odčitek čiste vode po kanalih) je izmišljen. Za pravo uporabo ga je treba izmeriti z deionizirano vodo ob umerjanju.
 - **Naprava** – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
+- **Nastavitve** – običajna območja in prag hitre spremembe za vsako meritev, čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`).
 
-Meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
+Privzete meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 
 ## Datoteke
 
@@ -47,11 +47,12 @@ Meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 - `src/lib/app.mjs` – demo podatki in CSV
 - `src/lib/monitoring.mjs` – ocena stanja in zaznavanje dogodkov
 - `src/lib/demo-rules.mjs` – izmišljene meje
+- `src/lib/settings.mjs` – nastavitve: privzete vrednosti, preverjanje, nalaganje
 
 ## Testi
 
 ```sh
-cd frontend && npm test
+npm test
 ```
 
 ## Pomen meritev za laike

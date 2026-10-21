@@ -1,7 +1,7 @@
 // Simple page: three views (everyone / expert / maintenance). All data is simulated.
 import { FIELDS, buildDemoData, fieldsForView, rowValue, toCsv } from './app.mjs';
 import { assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
-import { createDemoRules } from './demo-rules.mjs';
+import { STORAGE_KEY, loadSettings, validateSettings } from './settings.mjs';
 import { describe, eventText } from './plain.mjs';
 import { mergeSpans, segments, ticks } from './series.mjs';
 import { indicators, transmission, wavelengthColor } from './spectrum.mjs';
@@ -120,7 +120,10 @@ function syncedHover(container, timeEl = null, onSelect = null) {
 }
 
 const rows = buildDemoData(1);
-const rules = createDemoRules();
+let savedSettings = null;
+try { savedSettings = localStorage.getItem(STORAGE_KEY); } catch {}
+const settings = loadSettings(savedSettings);
+const rules = settings.rules;
 const latest = rows.at(-1);
 
 // Everyone: one big answer + four cards.
@@ -334,8 +337,8 @@ $('csv').addEventListener('click', () => {
 
 // Maintenance: is the device alive and healthy?
 const minutesAgo = Math.max(0, Math.round((Date.now() - latest.receivedAt) / 60000));
-const online = minutesAgo <= 15;
-const signal = latest.rssi >= -90 ? 'Dober' : latest.rssi >= -105 ? 'Srednji' : 'Slab';
+const online = minutesAgo <= settings.offlineMinutes;
+const signal = latest.rssi >= settings.rssiGood ? 'Dober' : latest.rssi >= settings.rssiWeak ? 'Srednji' : 'Slab';
 $('device').innerHTML = [
   ['Naprava', `BioSens ${String(latest.unitId).padStart(2, '0')}`],
   ['Povezava', online ? 'Deluje' : 'Ni povezave', online ? 'normal' : 'attention'],
@@ -345,6 +348,37 @@ $('device').innerHTML = [
 ].map(([label, value, state]) => `<div${state ? ` data-status="${state}"` : ''}><dt>${label}</dt><dd>${value}</dd></div>`).join('');
 $('packets').innerHTML = rows.slice(-8).reverse().map(row =>
   `<tr><td>${time(row.receivedAt)}</td><td>${row.rssi} dBm</td><td>${fmt(row.snr, 1)} dB</td></tr>`).join('');
+
+// Settings: ranges per measurement and device limits. Saving reloads the page so every view uses them.
+const RULE_INPUTS = [['min', 'Od'], ['max', 'Do'], ['change', 'Sprememba v 1 h']];
+const DEVICE_INPUTS = [['s-offline', 'offlineMinutes'], ['s-rssi-good', 'rssiGood'], ['s-rssi-weak', 'rssiWeak']];
+const inputValue = v => v == null ? '' : String(v);
+function fillSettings(s) {
+  $('rule-fields').innerHTML = Object.entries(MAIN).map(([key, { name }]) => `<fieldset class="set-card"><legend>${name}<span class="unit">${FIELDS[key].unit}</span></legend>
+    <div class="set-grid">${RULE_INPUTS.map(([field, label]) => `<label>${label}<input data-rule="${key}" data-field="${field}" type="number" inputmode="decimal" step="any"
+      value="${inputValue(s.rules[key]?.[field])}"></label>`).join('')}</div></fieldset>`).join('');
+  DEVICE_INPUTS.forEach(([id, field]) => { $(id).value = inputValue(s[field]); });
+  $('s-error').textContent = '';
+}
+function saveSettings(s) {
+  try { validateSettings(s); } catch (e) { $('s-error').textContent = e.message; return; }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { $('s-error').textContent = 'Nastavitev ni bilo mogoče shraniti v tem brskalniku.'; return; }
+  location.reload();
+}
+fillSettings(settings);
+$('settings-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const num = el => el.value.trim() === '' ? null : Number(el.value);
+  const next = { rules: {} };
+  document.querySelectorAll('[data-rule]').forEach(el => { (next.rules[el.dataset.rule] ??= {})[el.dataset.field] = num(el); });
+  DEVICE_INPUTS.forEach(([id, field]) => { next[field] = num($(id)); });
+  saveSettings(next);
+});
+$('s-reset').addEventListener('click', () => {
+  if (!confirm('Ponastavim vse nastavitve na privzete vrednosti?')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  location.reload();
+});
 
 // View switch, remembered per browser.
 const buttons = [...document.querySelectorAll('[data-view]')];
