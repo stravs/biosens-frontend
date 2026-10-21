@@ -10,6 +10,18 @@ npm run dev        # astro dev --host → http://<ip>:4321
 npm run build      # statična stran v dist/
 ```
 
+## Objava na Cloudflare Workers
+
+Statična stran: Astro zgradi `dist/`, Worker te datoteke streže (`wrangler.jsonc`, brez lastne kode).
+
+```sh
+npx wrangler login       # enkrat
+npm run preview:worker   # lokalno, kot na Cloudflare
+npm run deploy           # zgradi in objavi
+```
+
+Za samodejno objavo ob vsakem pushu povežite repozitorij v Cloudflare (Workers Builds): ukaz za gradnjo `npm run build`, ukaz za objavo `npx wrangler deploy`.
+
 ## Pogledi
 
 - **Voda** – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.

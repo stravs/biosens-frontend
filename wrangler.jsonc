@@ -1,0 +1,7 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "biosens-frontend",
+  "compatibility_date": "2026-10-01",
+  // Static site only: Astro builds to dist/, the Worker serves those files.
+  "assets": { "directory": "./dist" }
+}
