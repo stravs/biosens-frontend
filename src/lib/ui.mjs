@@ -160,45 +160,47 @@ const week = await fetchJson('/api/readings');
 const simulated = !week?.rows.length;
 $('source').textContent = simulated ? 'Ni podatkov z naprave: prikazani so simulirani podatki. Privzete meje so izmišljene.'
   : 'Podatki z naprave. Privzete meje so izmišljene.';
-const latestWeek = prepare(simulated ? buildDemoData(1) : week.rows);
-const rows = latestWeek.rows;
-const latest = rows.at(-1);
+let latestWeek = prepare(simulated ? buildDemoData(1) : week.rows);
+let rows = latestWeek.rows;
+let latest = rows.at(-1);
+let events = [];
 
-// Everyone: one big answer + four cards.
-const { status } = currentStatus(rows, rules, ALERT_KEYS);
-$('status').dataset.status = status;
-$('status').innerHTML = `<span class="icon" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}
-  <small class="when">Zadnja meritev<br>${time(latest.receivedAt)}</small>`;
-$('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
-  const point = assessPoint(rows, rows.length - 1, key, rules[key]);
-  const state = point.severity || point.changed ? 'unusual' : 'normal';
-  const plain = describe(key, latest[key], rules[key]);
-  const scale = plain.position == null ? '' : `<div class="scale" aria-hidden="true"><div class="track"><i style="left:${(plain.position * 100).toFixed(1)}%"></i></div>
-      <div class="ends"><span>${plain.ends[0]}</span><span>${plain.ends[1]}</span></div></div>`;
-  if (plain.answer == null) {
-    // Number-only card (temperature): big value + change over the last hour.
-    const d = point.delta;
-    const trend = d == null ? '' : Math.abs(d) < 0.05 ? 'Enako kot pred eno uro'
-      : `<b>${d > 0 ? '↑' : '↓'} ${fmt(Math.abs(d), 1)} ${FIELDS[key].unit}</b> v zadnji uri`;
-    return `<div class="card number" data-status="${state}"><h3>${plain.question}</h3>
-    <p class="answer">${fmt(latest[key], digits)}<span>${FIELDS[key].unit}</span></p>
-    <p class="trend">${trend}</p>
-    ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
-  }
-  return `<div class="card" data-status="${state}"><h3>${plain.question}</h3>
-    <p class="answer">${plain.answer}</p>
-    <p class="measure">${name}: ${fmt(latest[key], digits)} ${FIELDS[key].unit}</p>
-    ${scale}
-    ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
-}).join('');
+// Everyone: one big answer + four cards, and notable events in plain words, newest first.
+function drawEveryone() {
+  const { status } = currentStatus(rows, rules, ALERT_KEYS);
+  $('status').dataset.status = status;
+  $('status').innerHTML = `<span class="icon" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}
+    <small class="when">Zadnja meritev<br>${time(latest.receivedAt)}</small>`;
+  $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
+    const point = assessPoint(rows, rows.length - 1, key, rules[key]);
+    const state = point.severity || point.changed ? 'unusual' : 'normal';
+    const plain = describe(key, latest[key], rules[key]);
+    const scale = plain.position == null ? '' : `<div class="scale" aria-hidden="true"><div class="track"><i style="left:${(plain.position * 100).toFixed(1)}%"></i></div>
+        <div class="ends"><span>${plain.ends[0]}</span><span>${plain.ends[1]}</span></div></div>`;
+    if (plain.answer == null) {
+      // Number-only card (temperature): big value + change over the last hour.
+      const d = point.delta;
+      const trend = d == null ? '' : Math.abs(d) < 0.05 ? 'Enako kot pred eno uro'
+        : `<b>${d > 0 ? '↑' : '↓'} ${fmt(Math.abs(d), 1)} ${FIELDS[key].unit}</b> v zadnji uri`;
+      return `<div class="card number" data-status="${state}"><h3>${plain.question}</h3>
+      <p class="answer">${fmt(latest[key], digits)}<span>${FIELDS[key].unit}</span></p>
+      <p class="trend">${trend}</p>
+      ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
+    }
+    return `<div class="card" data-status="${state}"><h3>${plain.question}</h3>
+      <p class="answer">${plain.answer}</p>
+      <p class="measure">${name}: ${fmt(latest[key], digits)} ${FIELDS[key].unit}</p>
+      ${scale}
+      ${state === 'normal' ? '' : `<p class="word">${WORD[state]}</p>`}</div>`;
+  }).join('');
 
-// Everyone: notable events in plain words, newest first.
-const allEvents = latestWeek.events;
-const events = eventsInRange(allEvents, latest.receivedAt, 24).slice(0, 6);
-$('events').innerHTML = events.length
-  ? events.map((ev, i) => `<li data-status="${ev.severity}"><button type="button" data-event="${i}">
-      <b>${time(ev.start)}</b><em>${eventText(ev)}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span><i aria-hidden="true">›</i></button></li>`).join('')
-  : '<li data-status="normal"><em>V zadnjih 24 urah ni bilo nič posebnega.</em></li>';
+  events = eventsInRange(latestWeek.events, latest.receivedAt, 24).slice(0, 6);
+  $('events').innerHTML = events.length
+    ? events.map((ev, i) => `<li data-status="${ev.severity}"><button type="button" data-event="${i}">
+        <b>${time(ev.start)}</b><em>${eventText(ev)}</em><span>${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span><i aria-hidden="true">›</i></button></li>`).join('')
+    : '<li data-status="normal"><em>V zadnjih 24 urah ni bilo nič posebnega.</em></li>';
+}
+drawEveryone();
 
 // Event detail: what happened, when, and the measurement around it.
 const dialogHover = syncedHover($('event-body'));
@@ -224,7 +226,7 @@ function openEvent(ev) {
   $('event-dialog').showModal();
   $('event-dialog').scrollTop = 0; // focus lands on Zapri at the bottom; keep the title in view
 }
-document.querySelectorAll('[data-event]').forEach(b => b.addEventListener('click', () => openEvent(events[+b.dataset.event])));
+$('events').addEventListener('click', e => { const b = e.target.closest('[data-event]'); if (b) openEvent(events[+b.dataset.event]); });
 $('event-close').addEventListener('click', () => $('event-dialog').close());
 $('event-dialog').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
@@ -394,18 +396,52 @@ $('csv').addEventListener('click', () => {
 });
 
 // Maintenance: is the device alive and healthy?
-const minutesAgo = Math.max(0, Math.round((Date.now() - latest.receivedAt) / 60000));
-const online = minutesAgo <= settings.offlineMinutes;
-const signal = latest.rssi >= settings.rssiGood ? 'Dober' : latest.rssi >= settings.rssiWeak ? 'Srednji' : 'Slab';
-$('device').innerHTML = [
-  ['Naprava', `BioSens ${String(latest.unitId).padStart(2, '0')}`],
-  ['Povezava', online ? 'Deluje' : 'Ni povezave', online ? 'normal' : 'attention'],
-  ['Zadnji paket', `pred ${minutesAgo} min`],
-  ['Signal', `${signal} · ${latest.rssi} dBm · SNR ${fmt(latest.snr, 1)} dB`, signal === 'Slab' ? 'unusual' : 'normal'],
-  ...[1, 2, 3].map(i => [`Temperatura čipa ${i}`, `${latest[`chipTemp${i}`]} °C`]),
-].map(([label, value, state]) => `<div${state ? ` data-status="${state}"` : ''}><dt>${label}</dt><dd>${value}</dd></div>`).join('');
-$('packets').innerHTML = rows.slice(-8).reverse().map(row =>
-  `<tr><td>${time(row.receivedAt)}</td><td>${row.rssi} dBm</td><td>${fmt(row.snr, 1)} dB</td></tr>`).join('');
+function drawDevice() {
+  const minutesAgo = Math.max(0, Math.round((Date.now() - latest.receivedAt) / 60000));
+  const online = minutesAgo <= settings.offlineMinutes;
+  const signal = latest.rssi >= settings.rssiGood ? 'Dober' : latest.rssi >= settings.rssiWeak ? 'Srednji' : 'Slab';
+  $('device').innerHTML = [
+    ['Naprava', `BioSens ${String(latest.unitId).padStart(2, '0')}`],
+    ['Povezava', online ? 'Deluje' : 'Ni povezave', online ? 'normal' : 'attention'],
+    ['Zadnji paket', `pred ${minutesAgo} min`],
+    ['Signal', `${signal} · ${latest.rssi} dBm · SNR ${fmt(latest.snr, 1)} dB`, signal === 'Slab' ? 'unusual' : 'normal'],
+    ...[1, 2, 3].map(i => [`Temperatura čipa ${i}`, `${latest[`chipTemp${i}`]} °C`]),
+  ].map(([label, value, state]) => `<div${state ? ` data-status="${state}"` : ''}><dt>${label}</dt><dd>${value}</dd></div>`).join('');
+  $('packets').innerHTML = rows.slice(-8).reverse().map(row =>
+    `<tr><td>${time(row.receivedAt)}</td><td>${row.rssi} dBm</td><td>${fmt(row.snr, 1)} dB</td></tr>`).join('');
+}
+drawDevice();
+
+// Live: once a minute, fetch only readings newer than the last one (cheap: just the new rows are read)
+// and redraw. Paused while the tab is hidden. Podatki follows only a preset over the latest week;
+// a chosen period or hourly averages stay as they are (refetching averages per packet would be costly).
+const POLL_MS = 60000;
+let polling = false;
+async function poll() {
+  if (document.hidden || polling) return;
+  polling = true;
+  try {
+    if (simulated) { if ((await fetchJson('/api/readings'))?.rows.length) location.reload(); return; }
+    const from = latest.receivedAt + 1;
+    const data = await fetchJson(`/api/readings?from=${from}&to=${from + WEEK}`);
+    if (data?.rows.length) {
+      const end = data.rows.at(-1).receivedAt;
+      latestWeek = prepare([...rows, ...data.rows].filter(r => r.receivedAt >= end - WEEK));
+      rows = latestWeek.rows;
+      latest = rows.at(-1);
+      bounds.end = end;
+      drawEveryone();
+      if (current.preset && resolve(current, bounds).to - resolve(current, bounds).from <= WEEK) {
+        shown = { from: end - WEEK, to: end, bucket: null, ...latestWeek };
+        current = resolve(current, bounds);
+        if (pop.hidden) drawData();
+      } else if (pop.hidden) drawTimeBar();
+    }
+    drawDevice(); // "pred X min" and the connection state change even without new data
+  } finally { polling = false; }
+}
+setInterval(poll, POLL_MS);
+document.addEventListener('visibilitychange', poll);
 
 // Settings: ranges per measurement and device limits. Saving reloads the page so every view uses them.
 const RULE_INPUTS = [['min', 'Od'], ['max', 'Do'], ['change', 'Sprememba v 1 h']];
