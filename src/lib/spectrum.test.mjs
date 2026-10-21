@@ -9,8 +9,7 @@ const spectrumFrom = factors => WL.map((wavelength, i) => ({ wavelength, value: 
 test('clean water is 100 % on every channel and has no indicator signal', () => {
   const clean = spectrumFrom(() => 1);
   assert.ok(transmission(clean).every(c => Math.abs(c.value - 100) < 1e-9));
-  const { overall, blue, algae } = indicators(clean);
-  assert.ok(Math.abs(overall) < 1e-9 && Math.abs(blue) < 1e-9 && Math.abs(algae) < 1e-9);
+  for (const [name, value] of Object.entries(indicators(clean))) assert.ok(Math.abs(value) < 1e-9, name);
 });
 
 test('mud dims all channels evenly: overall rises, algae stays zero', () => {
@@ -18,6 +17,23 @@ test('mud dims all channels evenly: overall rises, algae stays zero', () => {
   assert.ok(Math.abs(i.overall - 10) < 1e-9);
   assert.ok(Math.abs(i.blue - 10) < 1e-9);
   assert.ok(Math.abs(i.algae) < 1e-9);
+  assert.ok(Math.abs(i.colour) < 1e-9);
+  assert.ok(Math.abs(i.cyano) < 1e-9);
+});
+
+test('a dip at 610 nm shows up as cyanobacteria only', () => {
+  const i = indicators(spectrumFrom(nm => (nm === 610 ? 0.96 : 1)));
+  assert.ok(Math.abs(i.cyano - 4) < 1e-9);
+  assert.ok(Math.abs(i.algae) < 1e-9);
+  assert.ok(Math.abs(i.colour) < 1e-9);
+});
+
+test('water colour ignores mud but follows blue-end loss', () => {
+  const muddyBrown = indicators(spectrumFrom(nm => 0.9 * (nm <= 435 ? 0.95 : 1)));
+  const brown = indicators(spectrumFrom(nm => (nm <= 435 ? 0.95 : 1)));
+  assert.ok(Math.abs(brown.colour - 5) < 1e-9);
+  assert.ok(muddyBrown.blue > brown.blue + 9); // raw blue loss jumps with mud...
+  assert.ok(Math.abs(muddyBrown.colour - 4.5) < 1e-9); // ...colour stays (mud also dims the brown part)
 });
 
 test('a dip at 680 nm shows up as algae only', () => {

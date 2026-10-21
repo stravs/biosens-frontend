@@ -226,7 +226,12 @@ section > h2:first-child, section > div:first-child > h2:first-child, section > 
 .pt::after { content: ''; position: absolute; inset: -10px; } /* bigger hit area than the dot */
 .pt:hover, .pt:focus-visible { width: 16px; height: 16px; }
 .regions b { position: absolute; top: 2px; font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; }
-.regions b:last-child { transform: translateX(-50%); }
+.regions b:last-child { transform: translateX(-4px); }
+.regions b.cy { transform: translateX(-50%); }
+@media (max-width: 759px) {
+  .regions b { font-size: 12px; }
+  .regions b.cy { width: min-content; white-space: normal; hyphens: manual; line-height: 1.15; text-align: center; }
+}
 .regions b:first-child { max-width: 34%; white-space: normal; line-height: 1.15; } /* wraps on phones instead of overlapping "alge" */
 .spec-strip { margin-left: 52px; }
 .spec-strip .bands { position: relative; height: 12px; margin-top: 6px; border-radius: 3px; background: var(--line); }

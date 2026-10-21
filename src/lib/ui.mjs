@@ -193,7 +193,9 @@ $('event-dialog').addEventListener('click', e => { if (e.target === e.currentTar
 const SPEC = [
   { key: 'overall', title: 'Slabljenje – vsi kanali', hint: 'mulj, delci', digits: 1 },
   { key: 'blue', title: 'Slabljenje – modri del', hint: '410–435 nm · železo, mangan', digits: 1 },
+  { key: 'colour', title: 'Obarvanost vode', hint: 'modri del brez vpliva mulja · huminske snovi, železo, mangan', digits: 2 },
   { key: 'algae', title: 'Alge – 680 nm', hint: 'klorofil, glede na sosednja kanala', digits: 2 },
+  { key: 'cyano', title: 'Cianobakterije – 610 nm', hint: 'fikocianin, glede na sosednja kanala', digits: 2 },
 ];
 const specRows = rows.map(r => ({ receivedAt: r.receivedAt, ...indicators(r.spectrum) }));
 const NM_MIN = 400, NM_MAX = 950;
@@ -218,7 +220,7 @@ function spectrumCard(range) {
     <div class="plot spec-plot">
       <div class="ylabels" aria-hidden="true">${yl}</div>
       <div class="area">
-        <div class="regions" aria-hidden="true"><b style="left:${nmX(410)}%">železo, mangan</b><b style="left:${nmX(680)}%">alge</b></div>
+        <div class="regions" aria-hidden="true"><b style="left:${nmX(410)}%">železo, mangan</b><b class="cy" style="left:${nmX(610)}%">ciano&shy;bakterije</b><b style="left:${nmX(680)}%">alge</b></div>
         <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Prepustnost po valovnih dolžinah">${grid}${line(then, 'line then')}${line(now, 'line')}</svg>
         ${dots}
       </div>

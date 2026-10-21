@@ -21,16 +21,20 @@ export function transmission(spectrum, reference = DEMO_REFERENCE) {
 
 const lossAt = (t, nm) => 100 - t.find(c => c.wavelength === nm).value;
 
-// Three indicators, each in percentage points of light lost:
+// Extra loss at nm above a straight line through the two neighbouring channels.
+// Particles dim neighbours equally, so they cancel; only a narrow pigment dip remains.
+const dip = (t, left, nm, right) => lossAt(t, nm) - (lossAt(t, left) + (lossAt(t, right) - lossAt(t, left)) * (nm - left) / (right - left));
+
+// Indicators, each in percentage points of light lost:
 // - overall: average loss over all channels (mud and particles dim everything evenly);
-// - blue: loss at the violet/blue end, 410-435 nm (iron, manganese, humic matter);
-// - algae: extra loss at 680 nm above a straight line through 645 and 705 nm (chlorophyll),
-//   the same baseline idea as the fluorescence line height method.
+// - blue: loss at the violet/blue end, 410-435 nm (iron, manganese, humic matter, plus particles);
+// - colour: blue minus the loss at 860 nm, where dissolved matter does not absorb and only
+//   particles block light, so mud cancels out and dissolved colour remains;
+// - algae: dip at 680 nm against 645 and 705 nm (chlorophyll), as in the fluorescence line height method;
+// - cyano: dip at 610 nm against 585 and 645 nm (phycocyanin, the pigment of cyanobacteria).
 export function indicators(spectrum, reference = DEMO_REFERENCE) {
   const t = transmission(spectrum, reference);
   const overall = t.reduce((s, c) => s + (100 - c.value), 0) / t.length;
   const blue = (lossAt(t, 410) + lossAt(t, 435)) / 2;
-  const baseline = lossAt(t, 645) + (lossAt(t, 705) - lossAt(t, 645)) * (680 - 645) / (705 - 645);
-  const algae = lossAt(t, 680) - baseline;
-  return { overall, blue, algae };
+  return { overall, blue, colour: blue - lossAt(t, 860), algae: dip(t, 645, 680, 705), cyano: dip(t, 585, 610, 645) };
 }

@@ -42,7 +42,12 @@ Kot v orodjih za spremljanje (Grafana, Datadog), logika v `src/lib/timerange.mjs
 Kot v poročilu WaQuMoS: naprava meri, koliko svetlobe halogenske žarnice pride skozi vodo na 18 kanalih (AS7265x, 410–940 nm, vsak širok ~20 nm). Vzorec se primerja s čisto (deionizirano) vodo = 100 % prepustnosti (`src/lib/spectrum.mjs`).
 
 - **Spekter**: prepustnost v % po valovni dolžini, zdaj in na začetku obdobja, z barvnim trakom kanalov.
-- **Kazalniki skozi čas** (odstotne točke izgubljene svetlobe): vsi kanali (mulj, delci), modri del 410–435 nm (železo, mangan), alge = dodatna izguba pri 680 nm nad črto med 645 in 705 nm (klorofil; kot metoda FLH).
+- **Kazalniki skozi čas** (odstotne točke izgubljene svetlobe):
+  - vsi kanali – mulj, delci;
+  - modri del 410–435 nm – železo, mangan, huminske snovi, a tudi mulj;
+  - obarvanost vode = modri del minus izguba pri 860 nm. Pri 860 nm raztopljene snovi ne vpijajo, svetlobo zadržijo samo delci, zato se vpliv mulja odšteje in ostane raztopljena barva (huminske snovi, železo, mangan; med seboj jih spekter ne loči);
+  - alge = dodatna izguba pri 680 nm nad črto med 645 in 705 nm (klorofil; kot metoda FLH);
+  - cianobakterije = dodatna izguba pri 610 nm nad črto med 585 in 645 nm (fikocianin). Kanal je širok ~20 nm, zato zazna le izrazitejše cvetenje; brez umerjanja z laboratorijskimi vzorci kaže samo spremembo, ne koncentracije.
 - **Toplotna karta**: vsi kanali skozi čas na eni skupni lestvici.
 
 `DEMO_REFERENCE` (odčitek čiste vode po kanalih) je izmišljen. Za pravo uporabo ga je treba izmeriti z deionizirano vodo ob umerjanju.

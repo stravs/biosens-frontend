@@ -33,11 +33,14 @@ export function buildDemoData(deviceId, now = Date.now()) {
     const turbidity = Number((3.1 + deviceId * 0.4 + Math.sin(phase * 2) * 0.35 + Math.exp(-(((index - 1938) / 16) ** 2)) * 2 + ripple).toFixed(2));
     // Spectrum = clean-water reading x transmission. Particles dim all channels (follows turbidity),
     // a little extra loss at the blue end, and a small algae dip at 680 nm that grows over the week.
+    // A brown pulse ~21 h ago (blue end) and a cyanobacteria dip at 610 nm rising over the last ~12 h.
     const algae = 0.004 + 0.012 * index / 2016 + Math.sin(phase) * 0.002;
+    const brown = 0.03 * Math.exp(-(((index - 1760) / 30) ** 2));
+    const cyano = 0.008 / (1 + Math.exp(-(index - 1880) / 40)) + Math.sin(phase + 2) * 0.001;
     const spectrum = CHANNELS.map((channel, i) => {
       const nm = WAVELENGTHS[i];
-      const loss = 0.006 * turbidity + (nm <= 460 ? 0.012 * (480 - nm) / 70 : 0)
-        + (nm === 680 ? algae : 0) + Math.sin(index * 0.37 + i * 2.1) * 0.0004;
+      const loss = 0.006 * turbidity + (nm <= 460 ? (0.012 + brown) * (480 - nm) / 70 : 0)
+        + (nm === 680 ? algae : 0) + (nm === 610 ? cyano : 0) + Math.sin(index * 0.37 + i * 2.1) * 0.0004;
       return { channel, wavelength: nm, value: Math.round(DEMO_REFERENCE[i] * (1 - loss) * 10) / 10 };
     });
     return {
