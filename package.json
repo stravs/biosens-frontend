@@ -11,7 +11,9 @@
     "preview:worker": "astro build && wrangler dev"
   },
   "dependencies": {
-    "astro": "7.4.1"
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.4.1",
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "wrangler": "4.148.0"

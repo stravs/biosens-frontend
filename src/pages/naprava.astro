@@ -3,14 +3,14 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout view="naprava" title="Naprava">
-  <section id="maintenance" class="cols">
+  <section id="maintenance" class="md:grid md:grid-cols-[1fr_1fr] md:items-start md:gap-x-6">
     <div>
-      <h2>Stanje naprave</h2>
-      <dl id="device" class="facts"></dl>
+      <h2 class="mt-1">Stanje naprave</h2>
+      <dl id="device" class="overflow-hidden rounded-card bg-card shadow-card"></dl>
     </div>
     <div>
-      <h2>Zadnji paketi</h2>
-      <div class="scroll"><table>
+      <h2 class="md:mt-1">Zadnji paketi</h2>
+      <div class="overflow-x-auto rounded-card shadow-card"><table class="w-full border-collapse bg-card tabular-nums">
         <thead><tr><th>Čas</th><th>RSSI</th><th>SNR</th></tr></thead>
         <tbody id="packets"></tbody>
       </table></div>

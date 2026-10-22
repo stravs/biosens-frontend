@@ -2,30 +2,34 @@
 // Time range control for Podatki, as in monitoring tools: back, presets / custom range, forward, zoom out.
 // Behaviour lives in scripts/podatki.mjs.
 import { PRESETS } from '../lib/timerange.mjs';
+
+const ICON_BUTTON = 'grid flex-none place-items-center w-11.5 min-h-15 rounded-2xl bg-card text-[30px] leading-none text-ink shadow-card disabled:opacity-35 disabled:cursor-default md:w-14';
+const SVG = { class: 'size-6.5', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round', 'aria-hidden': 'true' };
 ---
-<div class="timebar sticky" role="group" aria-label="Časovno obdobje">
-  <button type="button" id="t-back" class="tb-icon" aria-label="Nazaj v času" title="Nazaj v času">‹</button>
-  <div class="tp">
-    <button type="button" id="t-open" class="tp-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="t-pop">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      <span class="tp-text"><b id="t-label"></b><small id="t-exact"></small></span>
-      <span class="tp-caret" aria-hidden="true">▾</span>
+<div class="sticky top-2 z-5 flex items-stretch gap-1.5 mb-2 shadow-[0_0_0_8px_var(--color-page)] md:gap-2" role="group" aria-label="Časovno obdobje">
+  <button type="button" id="t-back" class={ICON_BUTTON} aria-label="Nazaj v času" title="Nazaj v času">‹</button>
+  <!-- On phones the popover spans the whole time bar -->
+  <div class="tp relative flex-1 min-w-0 max-md:static">
+    <button type="button" id="t-open" class="flex items-center gap-2 w-full h-full min-h-15 px-2.5 py-1.5 rounded-2xl bg-card text-left shadow-card md:gap-3 md:px-4" aria-haspopup="dialog" aria-expanded="false" aria-controls="t-pop">
+      <svg {...SVG}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span class="flex-1 min-w-0 leading-[1.2]"><b id="t-label" class="block text-[19px] max-md:text-[17px] max-md:truncate"></b><small id="t-exact" class="block truncate text-[15px] text-muted tabular-nums"></small></span>
+      <span class="text-muted" aria-hidden="true">▾</span>
     </button>
-    <div id="t-pop" class="tp-pop" role="dialog" aria-label="Izberi časovno obdobje" hidden>
-      <ul id="t-presets" class="tp-presets">
-        {PRESETS.map(p => <li><button type="button" data-preset={p.id} aria-pressed="false"><span aria-hidden="true"></span>{p.label}</button></li>)}
+    <div id="t-pop" class="absolute top-[calc(100%+8px)] inset-x-0 z-20 w-[min(420px,100%)] max-h-[70vh] overflow-auto p-2 rounded-[18px] bg-card shadow-[0_8px_32px_rgb(20_24_31/18%)] max-md:w-auto" role="dialog" aria-label="Izberi časovno obdobje" hidden>
+      <ul id="t-presets">
+        {PRESETS.map(p => <li><button type="button" data-preset={p.id} aria-pressed="false" class="group flex items-center gap-2.5 w-full min-h-13 px-3 py-2 rounded-xl text-left font-semibold hover:bg-page aria-pressed:text-accent"><span class="w-4.5 font-extrabold text-accent group-aria-pressed:before:content-['✓']" aria-hidden="true"></span>{p.label}</button></li>)}
       </ul>
-      <form id="t-custom" class="tp-custom">
-        <p>Po meri</p>
-        <label>Od <input type="datetime-local" id="t-from" required></label>
-        <label>Do <input type="datetime-local" id="t-to" required></label>
-        <button type="submit" class="big">Prikaži</button>
-        <p id="t-error" class="tp-error" role="alert"></p>
+      <form id="t-custom" class="mt-1.5 px-3 pt-2.5 pb-1 border-t border-line">
+        <p class="mb-1.5 font-bold">Po meri</p>
+        <label class="grid grid-cols-[40px_1fr] items-center gap-2 mb-2 text-muted">Od <input type="datetime-local" id="t-from" required class="min-h-12 px-2.5 py-1.5 border-2 border-line rounded-xl bg-card text-[18px] text-ink"></label>
+        <label class="grid grid-cols-[40px_1fr] items-center gap-2 mb-2 text-muted">Do <input type="datetime-local" id="t-to" required class="min-h-12 px-2.5 py-1.5 border-2 border-line rounded-xl bg-card text-[18px] text-ink"></label>
+        <button type="submit" class="block w-full min-h-15 mt-1 rounded-full bg-accent font-bold text-white shadow-card">Prikaži</button>
+        <p id="t-error" class="min-h-[1em] mb-1.5 text-[17px] font-bold text-bad" role="alert"></p>
       </form>
     </div>
   </div>
-  <button type="button" id="t-fwd" class="tb-icon" aria-label="Naprej v času" title="Naprej v času">›</button>
-  <button type="button" id="t-zoom" class="tb-icon" aria-label="Oddalji: dvakrat daljše obdobje" title="Oddalji">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M7.5 10.5h6"/></svg>
+  <button type="button" id="t-fwd" class={ICON_BUTTON} aria-label="Naprej v času" title="Naprej v času">›</button>
+  <button type="button" id="t-zoom" class={ICON_BUTTON} aria-label="Oddalji: dvakrat daljše obdobje" title="Oddalji">
+    <svg {...SVG}><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M7.5 10.5h6"/></svg>
   </button>
 </div>

@@ -18,15 +18,18 @@ export function openEvent(ev, rows, rule = {}) {
     ? `Opozorimo, ko je za ${fmt(rule.max, digits)} ${unit} več kot običajno.`
     : ev.type === 'range' ? `Običajno območje je ${fmt(rule.min, digits)}–${fmt(rule.max, digits)} ${unit}.`
     : `V eni uri se je spremenilo za ${fmt(ev.magnitude, digits)} ${unit}. Opozorimo pri ${fmt(rule.change, digits)} ${unit}.`;
-  body.innerHTML = `<h2>${eventText(ev)}</h2>
-    <dl class="event-facts">
-      <div><dt>Začetek</dt><dd>${time(ev.start)}</dd></div>
-      <div><dt>Konec</dt><dd>${ev.ongoing ? 'Še traja' : time(ev.end)}</dd></div>
-      <div><dt>Vrhunec</dt><dd>${clock(ev.peak)} · ${fmt(peak?.[ev.key], digits)} ${unit}</dd></div>
+  const fact = (label, value) => `<div class="flex justify-between gap-3 px-3.5 py-2.5 rounded-[14px] bg-card md:block"><dt class="text-muted md:text-[16px]">${label}</dt><dd class="font-bold">${value}</dd></div>`;
+  body.innerHTML = `<h2 class="mt-0 mb-3 text-[26px]">${eventText(ev)}</h2>
+    <dl class="grid gap-2 mb-3 md:grid-cols-[repeat(3,1fr)]">
+      ${fact('Začetek', time(ev.start))}
+      ${fact('Konec', ev.ongoing ? 'Še traja' : time(ev.end))}
+      ${fact('Vrhunec', `${clock(ev.peak)} · ${fmt(peak?.[ev.key], digits)} ${unit}`)}
     </dl>
-    <p class="muted">${why}</p>
-    <article class="chart ts"><h3>${name}<span class="readout"></span></h3>${p.html}${p.axis}</article>
-    <p class="muted">Rumeni pas = čas dogodka. Zeleni pas = običajno območje.</p>`;
+    <p class="my-[1em] text-muted">${why}</p>
+    <article class="ts mt-3 p-4 rounded-card bg-card shadow-card [--plot-h:130px] md:px-6 md:py-5 md:[--plot-h:150px]">
+      <h3 class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2 text-[19px] font-[650]">${name}<span class="readout ml-auto text-right text-[24px] font-[750] tracking-[-0.02em] tabular-nums"></span></h3>${p.html}${p.axis}
+    </article>
+    <p class="my-[1em] text-muted">Rumeni pas = čas dogodka. Zeleni pas = običajno območje.</p>`;
   hover.set(around, [{ key: ev.key, el: body.querySelector('.ts'), ...p }], rows.at(-1).receivedAt);
   dialog.showModal();
   dialog.scrollTop = 0; // focus lands on Zapri at the bottom; keep the title in view

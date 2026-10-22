@@ -3,7 +3,7 @@ import { toCsv, rowValue } from '../lib/app.mjs';
 import { LINES, SAMPLE, SPEC } from '../lib/labels.mjs';
 import { transmission, wavelengthColor } from '../lib/spectrum.mjs';
 import { DEFAULT, PRESETS, clamp, fromInputValue, fromQuery, resolve, shift, snapToPreset, toInputValue, toQuery, zoomOut } from '../lib/timerange.mjs';
-import { plot, specMeta, syncedHover } from './chart.mjs';
+import { AREA, PLOT, YLABEL, plot, specMeta, syncedHover } from './chart.mjs';
 import { WEEK, fetchJson, live, loadWeek, prepare, rules } from './data.mjs';
 import { $, fmt, time } from './format.mjs';
 
@@ -11,33 +11,40 @@ import { $, fmt, time } from './format.mjs';
 const NM_MIN = 400, NM_MAX = 950;
 const nmX = nm => (nm - NM_MIN) / (NM_MAX - NM_MIN) * 100; // % across the plot
 
+const H3 = 'flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-2 text-[19px] font-[650]';
+const LEGEND = 'flex flex-wrap items-center gap-x-5 gap-y-1 mb-2 text-[18px]';
+const KEY = 'inline-block w-7 h-0 align-middle';
+// Region names over the spectrum; on phones they wrap instead of overlapping.
+const REGION = 'absolute top-0.5 text-[14px] font-semibold text-muted max-md:w-min max-md:text-[12px] max-md:hyphens-manual';
+const NOWRAP = 'whitespace-nowrap max-md:whitespace-normal max-md:leading-[1.15]';
+
 function spectrumCard(range, reference) {
   const now = transmission(range.at(-1).spectrum, reference), then = transmission(range[0].spectrum, reference);
   const all = [...now, ...then].map(c => c.value);
   const lo = Math.floor(Math.min(...all) - 1), hi = Math.max(101, Math.ceil(Math.max(...all)) + 1);
   const w = 800, h = 220;
   const x = nm => nmX(nm) / 100 * w, y = v => h - 12 - (v - lo) / (hi - lo) * (h - 24);
-  const line = (t, cls) => `<path class="${cls}" vector-effect="non-scaling-stroke" d="${t.map((c, i) => `${i ? 'L' : 'M'}${x(c.wavelength).toFixed(1)},${y(c.value).toFixed(1)}`).join('')}"/>`;
-  const dots = now.map((c, i) => `<span class="pt" style="left:${nmX(c.wavelength)}%;top:${(y(c.value) / h * 100).toFixed(2)}%" tabindex="0"
+  const line = (t, cls, attrs = '') => `<path class="fill-none stroke-[2.5] ${cls}" stroke-linejoin="round" ${attrs} vector-effect="non-scaling-stroke" d="${t.map((c, i) => `${i ? 'L' : 'M'}${x(c.wavelength).toFixed(1)},${y(c.value).toFixed(1)}`).join('')}"/>`;
+  const dots = now.map((c, i) => `<span class="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-accent after:absolute after:-inset-2.5 hover:size-4 focus-visible:size-4" style="left:${nmX(c.wavelength)}%;top:${(y(c.value) / h * 100).toFixed(2)}%" tabindex="0"
       title="${c.wavelength} nm · zdaj ${fmt(c.value, 1)} % · prej ${fmt(then[i].value, 1)} %"></span>`).join('');
-  const yl = [hi - 1, Math.round((lo + hi - 1) / 2), lo].map(v => `<span style="top:${(y(v) / h * 100).toFixed(1)}%">${v} %</span>`).join('');
-  const grid = [hi - 1, Math.round((lo + hi - 1) / 2), lo].map(v => `<line class="grid${v === 100 ? ' ref' : ''}" x1="0" x2="${w}" y1="${y(v)}" y2="${y(v)}" vector-effect="non-scaling-stroke"/>`).join('');
+  const yl = [hi - 1, Math.round((lo + hi - 1) / 2), lo].map(v => `<span class="${YLABEL}" style="top:${(y(v) / h * 100).toFixed(1)}%">${v} %</span>`).join('');
+  const grid = [hi - 1, Math.round((lo + hi - 1) / 2), lo].map(v => `<line class="${v === 100 ? 'stroke-ink stroke-[1.5]' : 'stroke-line'}" x1="0" x2="${w}" y1="${y(v)}" y2="${y(v)}" vector-effect="non-scaling-stroke"/>`).join('');
   // Colour strip: one 20 nm wide band per channel (the AS7265x filter width), in the colour of that light.
-  const strip = now.map(c => `<i style="left:${nmX(c.wavelength - 10)}%;width:${nmX(c.wavelength + 10) - nmX(c.wavelength - 10)}%;background:${wavelengthColor(c.wavelength)}"></i>`).join('');
-  const ticksNm = [400, 500, 600, 700, 800, 900].map(nm => `<span style="left:${nmX(nm)}%">${nm}</span>`).join('');
+  const strip = now.map(c => `<i class="absolute inset-y-0 rounded-xs" style="left:${nmX(c.wavelength - 10)}%;width:${nmX(c.wavelength + 10) - nmX(c.wavelength - 10)}%;background:${wavelengthColor(c.wavelength)}"></i>`).join('');
+  const ticksNm = [400, 500, 600, 700, 800, 900].map(nm => `<span class="absolute top-0.5 -translate-x-1/2" style="left:${nmX(nm)}%">${nm}</span>`).join('');
   const earlier = `Na začetku (${time(range[0].receivedAt)})`;
-  return `<h3>Koliko svetlobe pride skozi vodo</h3>
-    <p class="legend"><span><span class="key"></span> Zdaj</span><span><span class="key then"></span> ${earlier}</span><span><span class="key ref"></span> Običajno = 100 %</span></p>
-    <div class="plot spec-plot">
-      <div class="ylabels" aria-hidden="true">${yl}</div>
-      <div class="area">
-        <div class="regions" aria-hidden="true"><b style="left:${nmX(410)}%">rjava barva</b><b class="cy" style="left:${nmX(610)}%">modro&shy;zelene alge</b><b style="left:${nmX(680)}%">alge</b></div>
-        <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Prepustnost po valovnih dolžinah">${grid}${line(then, 'line then')}${line(now, 'line')}</svg>
+  return `<h3 class="${H3}">Koliko svetlobe pride skozi vodo</h3>
+    <p class="${LEGEND}"><span><span class="${KEY} border-t-4 border-accent"></span> Zdaj</span><span><span class="${KEY} border-t-4 border-dashed border-muted"></span> ${earlier}</span><span><span class="${KEY} border-t-2 border-ink"></span> Običajno = 100 %</span></p>
+    <div class="${PLOT}">
+      <div class="relative" aria-hidden="true">${yl}</div>
+      <div class="area ${AREA}">
+        <div aria-hidden="true"><b class="${REGION} max-w-[34%] leading-[1.15]" style="left:${nmX(410)}%">rjava barva</b><b class="${REGION} ${NOWRAP} -translate-x-1/2 max-md:text-center" style="left:${nmX(610)}%">modro&shy;zelene alge</b><b class="${REGION} ${NOWRAP} -translate-x-1" style="left:${nmX(680)}%">alge</b></div>
+        <svg class="block w-full h-55" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Prepustnost po valovnih dolžinah">${grid}${line(then, 'stroke-muted', 'stroke-dasharray="6 5"')}${line(now, 'stroke-accent')}</svg>
         ${dots}
       </div>
     </div>
-    <div class="spec-strip"><div class="bands">${strip}</div><div class="nm">${ticksNm}</div></div>
-    <p class="muted small">Valovna dolžina v nm. Barvni trak = 18 kanalov, vsak širok okoli 20 nm. Nad 700 nm je infrardeča svetloba (siva).</p>`;
+    <div class="ml-13"><div class="relative h-3 mt-1.5 rounded-[3px] bg-line">${strip}</div><div class="relative h-5 text-[14px] text-muted">${ticksNm}</div></div>
+    <p class="my-[1em] text-[16px] text-muted">Valovna dolžina v nm. Barvni trak = 18 kanalov, vsak širok okoli 20 nm. Nad 700 nm je infrardeča svetloba (siva).</p>`;
 }
 
 function heatmap(range, reference) {
@@ -49,13 +56,13 @@ function heatmap(range, reference) {
   const nm = grid[0].map(c => c.wavelength);
   const cells = grid.map((col, i) => col.map((c, ch) => {
     const p = Math.round(Math.min(1, Math.max(0, (100 - c.value) / (100 - lo))) * 100);
-    return `<rect x="${i}" y="${ch}" width="1.02" height="1.02" style="fill:color-mix(in oklab, var(--accent) ${p}%, var(--card))"><title>${c.wavelength} nm · ${time(buckets[i][0].receivedAt)} · ${fmt(c.value, 1)} %</title></rect>`;
+    return `<rect x="${i}" y="${ch}" width="1.02" height="1.02" style="fill:color-mix(in oklab, var(--color-accent) ${p}%, var(--color-card))"><title>${c.wavelength} nm · ${time(buckets[i][0].receivedAt)} · ${fmt(c.value, 1)} %</title></rect>`;
   }).join('')).join('');
-  return `<h3>Vsi kanali skozi čas</h3>
-    <p class="legend scale-legend"><span>100 % (običajno)</span><i></i><span>${lo} %</span><span class="muted">temneje = manj svetlobe</span></p>
-    <div class="heat"><div class="heat-labels">${nm.map(wl => `<span><i style="background:${wavelengthColor(wl)}"></i>${wl}</span>`).join('')}</div>
-      <svg viewBox="0 0 ${cols} ${nm.length}" preserveAspectRatio="none" role="img" aria-label="Prepustnost vseh kanalov skozi čas">${cells}</svg></div>
-    <div class="axis heat-axis"><span>${time(range[0].receivedAt)}</span><span>${time(range.at(-1).receivedAt)}</span></div>`;
+  return `<h3 class="${H3}">Vsi kanali skozi čas</h3>
+    <p class="${LEGEND}"><span>100 % (običajno)</span><i class="inline-block w-30 h-3 rounded-[3px] border border-line bg-linear-to-r from-card to-accent"></i><span>${lo} %</span><span class="text-muted">temneje = manj svetlobe</span></p>
+    <div class="grid grid-cols-[auto_1fr] gap-2"><div class="grid grid-rows-[repeat(18,1fr)] text-right text-[14px] leading-none text-muted">${nm.map(wl => `<span class="flex items-center justify-end gap-1.5 self-center"><i class="inline-block size-2 rounded-xs" style="background:${wavelengthColor(wl)}"></i>${wl}</span>`).join('')}</div>
+      <svg class="block w-full h-94.5 rounded-lg md:h-108" viewBox="0 0 ${cols} ${nm.length}" preserveAspectRatio="none" role="img" aria-label="Prepustnost vseh kanalov skozi čas">${cells}</svg></div>
+    <div class="flex justify-between gap-2 mt-1.5 pl-14.5 text-[16px] text-muted"><span>${time(range[0].receivedAt)}</span><span>${time(range.at(-1).receivedAt)}</span></div>`;
 }
 
 // Podatki can go back to the first reading ever; other periods are fetched when chosen.

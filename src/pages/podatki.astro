@@ -3,41 +3,57 @@
 import Layout from '../layouts/Layout.astro';
 import TimeBar from '../components/TimeBar.astro';
 import { LABEL, LINES, SAMPLE, SPEC } from '../lib/labels.mjs';
+
+// Stacked charts: one card, rows share one time axis. Desktop: name + value on the left,
+// plots touch so the pointer line is continuous.
+const STACK_TIME = 'sticky top-21 z-4 -mx-4 px-4 pt-2 pb-1 bg-card text-[17px] font-bold tabular-nums md:top-20 md:-mx-6 md:pl-[298px]';
+const ROWS = '[--plot-h:96px] md:[--plot-h:104px] md:[&>.axis]:pl-[274px]';
+const ROW = 'ts row pt-2.5 pb-1.5 border-b border-line md:grid md:grid-cols-[210px_1fr] md:items-center md:gap-3 md:p-0';
+const H3 = 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1 text-[19px] font-[650] md:block md:m-0';
+const READOUT = 'readout ml-auto text-right text-[24px] font-[750] tracking-[-0.02em] tabular-nums md:block md:mt-1 md:ml-0 md:text-left';
+const CARD = 'p-4 rounded-card bg-card shadow-card md:px-6 md:py-5';
+const STACK = CARD;
+const NOTE = 'my-[1em] max-w-[75ch] text-muted';
+const SWATCH = 'inline-block w-5.5 h-3.5 rounded';
 ---
 <Layout view="podatki" title="Podatki">
   <section id="expert">
     <TimeBar />
-    <p class="muted small tb-hint">Namig: z miško povlecite čez graf, da povečate izbrani del. Časi so lokalni.</p>
-    <p id="empty" class="muted" hidden></p>
+    <p class="max-w-[75ch] mt-1 text-[16px] text-muted touch:hidden">Namig: z miško povlecite čez graf, da povečate izbrani del. Časi so lokalni.</p>
+    <p id="empty" class={NOTE} hidden></p>
 
     <div id="data">
       <h2>Grafi</h2>
-      <p class="legend-row"><span><i class="sw band"></i>Običajno območje</span><span><i class="sw mark"></i>Posebni dogodek</span><span class="muted">Z miško ali prstom pokažite čas – vrednosti se pokažejo v vseh grafih.</span></p>
-      <div class="chart stack"><p id="stack-time" class="stack-time"></p><div id="graphs">
-        {LINES.map(key => <div class="ts row"><h3>{LABEL[key]}<span class="readout"></span></h3><div class="plot"></div></div>)}
+      <p class="flex flex-wrap items-center gap-x-5 gap-y-1.5 max-w-[75ch] mb-3 text-[17px]">
+        <span class="inline-flex items-center gap-2"><i class={`${SWATCH} border border-[#b9dcc6] bg-ok-bg`}></i>Običajno območje</span>
+        <span class="inline-flex items-center gap-2"><i class={`${SWATCH} bg-[color-mix(in_oklab,var(--color-warn-dot)_35%,var(--color-card))]`}></i>Posebni dogodek</span>
+        <span class="inline-flex items-center gap-2 text-muted">Z miško ali prstom pokažite čas – vrednosti se pokažejo v vseh grafih.</span>
+      </p>
+      <div class={STACK}><p id="stack-time" class={STACK_TIME}></p><div id="graphs" class={ROWS}>
+        {LINES.map(key => <div class={ROW}><h3 class={H3}>{LABEL[key]}<span class={READOUT}></span></h3><div class="plot"></div></div>)}
         <div class="axis"></div>
       </div></div>
 
       <h2>Spektrometer</h2>
-      <p class="muted">Naprava posveti skozi vodo in na 18 barvah svetlobe izmeri, koliko je pride skozi. Poceni senzor ne meri koncentracij, zato vse primerjamo z običajnim stanjem te naprave v zadnjem tednu. 0 = kot običajno, več = voda prepušča manj svetlobe kot običajno. Mulj zmanjša svetlobo povsod, rjava barva predvsem modro, alge pri 680 nm, modrozelene alge pri 610 nm.</p>
-      <article id="spectrum" class="chart"></article>
-      <div class="chart stack spec-stack"><p id="spec-time" class="stack-time"></p><div id="spec-graphs">
-        {SPEC.map(s => <div class="ts row"><h3>{s.title}<small class="hint">{s.hint}</small><span class="readout"></span></h3><div class="plot"></div></div>)}
+      <p class={NOTE}>Naprava posveti skozi vodo in na 18 barvah svetlobe izmeri, koliko je pride skozi. Poceni senzor ne meri koncentracij, zato vse primerjamo z običajnim stanjem te naprave v zadnjem tednu. 0 = kot običajno, več = voda prepušča manj svetlobe kot običajno. Mulj zmanjša svetlobo povsod, rjava barva predvsem modro, alge pri 680 nm, modrozelene alge pri 610 nm.</p>
+      <article id="spectrum" class={CARD}></article>
+      <div class={`${STACK} mt-3`}><p id="spec-time" class={STACK_TIME}></p><div id="spec-graphs" class={ROWS}>
+        {SPEC.map(s => <div class={ROW}><h3 class={H3}>{s.title}<small class="order-3 block basis-full text-[15px] font-medium text-muted">{s.hint}</small><span class={READOUT}></span></h3><div class="plot"></div></div>)}
         <div class="axis"></div>
       </div></div>
-      <article id="spec-heat" class="chart"></article>
-      <p class="muted small">Kaže spremembe, ne natančnih vrednosti. Če je voda dalj časa drugačna, se ji »običajno« sčasoma prilagodi.</p>
+      <article id="spec-heat" class={`${CARD} mt-3`}></article>
+      <p class={`${NOTE} text-[16px]`}>Kaže spremembe, ne natančnih vrednosti. Če je voda dalj časa drugačna, se ji »običajno« sčasoma prilagodi.</p>
 
-      <details class="collapse">
-        <summary><h2>Vse meritve</h2></summary>
-        <p id="table-count" class="muted"></p>
-        <div class="scroll table-box" tabindex="0"><table>
+      <details class="group mt-9 px-4.5 rounded-card bg-card shadow-card open:pb-4.5">
+        <summary class="flex items-center justify-between py-4.5 list-none cursor-pointer [&::-webkit-details-marker]:hidden after:size-2.5 after:mr-1.5 after:mb-1.5 after:border-r-[2.5px] after:border-b-[2.5px] after:border-muted after:rotate-45 after:transition-transform after:duration-150 group-open:after:mb-0 group-open:after:-rotate-135"><h2 class="m-0">Vse meritve</h2></summary>
+        <p id="table-count" class="my-[1em] text-muted"></p>
+        <div tabindex="0" class="overflow-x-auto max-h-[85vh] bg-card [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:bg-card [&_thead_th]:align-bottom [&_:is(th,td):first-child]:sticky [&_:is(th,td):first-child]:left-0 [&_:is(th,td):first-child]:bg-card [&_thead_th:first-child]:z-1"><table class="w-full border-collapse bg-card tabular-nums">
           <thead><tr><th>Čas</th>{SAMPLE.map(([key, f]) => <th>{LABEL[key] ?? f.title}{f.unit && <><br />{f.unit}</>}</th>)}</tr></thead>
           <tbody id="readings"></tbody>
         </table></div>
       </details>
     </div>
-    <div class="actions"><button type="button" id="csv" class="big">Prenesi izbrano obdobje (CSV)</button></div>
+    <div class="flex flex-col-reverse gap-3 mt-5 md:flex-row md:justify-end"><button type="button" id="csv" class="w-full min-h-15 rounded-full bg-accent font-bold text-white shadow-card md:w-auto md:min-h-13 md:px-7">Prenesi izbrano obdobje (CSV)</button></div>
   </section>
 </Layout>
 

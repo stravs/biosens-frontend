@@ -95,7 +95,7 @@ Privzete meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 - `src/layouts/Layout.astro` – glava, meni in noga za vse strani
 - `src/components/` – `TimeBar.astro` (izbira časa), `EventDialog.astro` (podrobnosti dogodka)
 - `src/scripts/` – koda v brskalniku, ena datoteka na stran (`voda.mjs`, `podatki.mjs` …); skupno: `data.mjs` (nastavitve, branje meritev, osveževanje), `chart.mjs` (grafi), `event-dialog.mjs`, `format.mjs`
-- `src/styles.css` – videz
+- Videz: Tailwind razredi kar v označbah (`.astro` in `src/scripts/`); barve, prelomi in osnova v `src/styles/global.css`
 - `src/lib/` – logika brez strani (s testi):
 - `src/lib/labels.mjs` – imena in vrstni red meritev na straneh
 - `src/lib/app.mjs` – polja, demo podatki in CSV

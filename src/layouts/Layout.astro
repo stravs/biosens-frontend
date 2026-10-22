@@ -1,6 +1,6 @@
 ---
 // Page shell for every view: head, nav and the footer that says where the data comes from.
-import '../styles.css';
+import '../styles/global.css';
 
 interface Props { view: 'voda' | 'podatki' | 'naprava' | 'nastavitve'; title: string }
 const { view, title } = Astro.props;
@@ -20,20 +20,22 @@ const NAV = [
   <meta name="theme-color" content="#f4f6f8">
   <title>{title} · BioSens</title>
 </head>
-<body>
-  <header class="top">
-    <span class="brand">BioSens</span>
-    <nav class="views" aria-label="Pogled">
+<body class="px-4 pt-4 pb-[calc(116px+env(safe-area-inset-bottom))] bg-page font-sans text-[20px] text-ink antialiased md:px-8 md:pt-5 md:pb-4 md:text-[19px]">
+  <header class="md:flex md:items-center md:justify-between md:gap-6 md:max-w-page md:mx-auto md:mb-6">
+    <span class="hidden text-[24px] font-extrabold tracking-[-0.02em] text-accent md:block">BioSens</span>
+    <!-- Bottom tab bar on phones, pill switch at the top on larger screens -->
+    <nav class="fixed inset-x-0 bottom-0 z-10 grid grid-cols-[repeat(4,1fr)] p-2 pb-[calc(8px+env(safe-area-inset-bottom))] border-t border-line bg-white/92 backdrop-blur-md md:static md:grid-cols-[repeat(4,auto)] md:gap-1 md:p-1.5 md:border-0 md:rounded-full md:shadow-card" aria-label="Pogled">
       {NAV.map(item => (
-        <a href={item.href} aria-current={item.id === view ? 'page' : undefined}>
-          <svg viewBox="0 0 24 24" aria-hidden="true" set:html={item.icon} />{item.label}
+        <a href={item.href} aria-current={item.id === view ? 'page' : undefined}
+          class="grid justify-items-center gap-0.5 min-h-17 px-0.5 py-1.5 rounded-2xl text-[16px] font-[650] text-muted no-underline aria-[current=page]:bg-accent-bg aria-[current=page]:text-accent md:flex md:items-center md:justify-center md:gap-2 md:min-h-12 md:px-4.5 md:py-0 md:rounded-full md:text-[17px] md:aria-[current=page]:bg-accent md:aria-[current=page]:text-white">
+          <svg class="size-7.5 md:size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={item.icon} />{item.label}
         </a>
       ))}
     </nav>
   </header>
-  <main>
+  <main class="max-w-page mx-auto">
     <slot />
   </main>
-  <footer id="source" class="muted"></footer>
+  <footer id="source" class="max-w-page mx-auto mt-10 text-[16px] text-center text-muted"></footer>
 </body>
 </html>
