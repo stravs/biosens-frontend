@@ -1,0 +1,21 @@
+---
+// Naprava: for maintenance. Is the device alive and healthy?
+import Layout from '../layouts/Layout.astro';
+---
+<Layout view="naprava" title="Naprava">
+  <section id="maintenance" class="cols">
+    <div>
+      <h2>Stanje naprave</h2>
+      <dl id="device" class="facts"></dl>
+    </div>
+    <div>
+      <h2>Zadnji paketi</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Čas</th><th>RSSI</th><th>SNR</th></tr></thead>
+        <tbody id="packets"></tbody>
+      </table></div>
+    </div>
+  </section>
+</Layout>
+
+<script>import '../scripts/naprava.mjs';</script>

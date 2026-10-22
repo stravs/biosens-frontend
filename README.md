@@ -1,6 +1,6 @@
 # BioSens frontend
 
-Preprosta Astro stran z velikimi črkami. Prikazuje podatke z naprave (UG65 → Cloudflare). Dokler jih ni (ali v `npm run dev`, kjer ni API-ja), pokaže simulirane podatke in to napiše v nogi.
+Preprosta Astro stran z velikimi črkami, ena stran za vsak pogled. Prikazuje podatke z naprave (UG65 → Cloudflare). Dokler jih ni (ali v `npm run dev`, kjer ni API-ja), pokaže simulirane podatke in to napiše v nogi.
 
 ## Zagon
 
@@ -56,10 +56,10 @@ Opombe:
 
 ## Pogledi
 
-- **Voda** – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
-- **Podatki** – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spektrometer; tabela vseh meritev; prenos CSV.
-- **Naprava** – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
-- **Nastavitve** – običajna območja in prag hitre spremembe za vsako meritev, meje za opozorila spektrometra, čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`).
+- **Voda** (`/`) – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
+- **Podatki** (`/podatki`) – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spektrometer; tabela vseh meritev; prenos CSV.
+- **Naprava** (`/naprava`) – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
+- **Nastavitve** (`/nastavitve`) – običajna območja in prag hitre spremembe za vsako meritev, meje za opozorila spektrometra, čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`).
 
 ## Izbira časa (Podatki)
 
@@ -68,7 +68,7 @@ Kot v orodjih za spremljanje (Grafana, Datadog), logika v `src/lib/timerange.mjs
 - Gumb s časom odpre seznam: zadnja ura, 6 ur, 12 ur, 24 ur, 2 dneva, 7 dni, vse, in polji **Od / Do** za obdobje po meri.
 - **‹ ›** premakneta obdobje za polovico nazaj ali naprej, **lupa** ga podaljša na dvojno dolžino.
 - Z miško **povlecite čez graf**, da povečate izbrani del.
-- Obdobje je v naslovu strani (`?obdobje=24h` ali `?od=…&do=…`), zato se ga da deliti ali shraniti kot zaznamek. Taka povezava odpre pogled Podatki.
+- Obdobje je v naslovu strani (`/podatki?obdobje=24h` ali `?od=…&do=…`), zato se ga da deliti ali shraniti kot zaznamek. Stare povezave na `/?obdobje=…` preusmerijo na Podatki.
 - Obdobje velja za vse: grafe, spektrometer, tabelo in prenos CSV.
 - Nazaj se da do prve meritve (**Vse**). Obdobja nad 7 dni kažejo urna povprečja; tabela in CSV takrat tudi (stolpec `st_meritev`).
 
@@ -91,9 +91,13 @@ Privzete meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 
 ## Datoteke
 
-- `src/pages/index.astro` – stran
+- `src/pages/` – ena stran na pogled: `index.astro` (Voda), `podatki.astro`, `naprava.astro`, `nastavitve.astro`. Kar se ne spreminja (meni, imena grafov, glava tabele, polja nastavitev), Astro zgradi vnaprej.
+- `src/layouts/Layout.astro` – glava, meni in noga za vse strani
+- `src/components/` – `TimeBar.astro` (izbira časa), `EventDialog.astro` (podrobnosti dogodka)
+- `src/scripts/` – koda v brskalniku, ena datoteka na stran (`voda.mjs`, `podatki.mjs` …); skupno: `data.mjs` (nastavitve, branje meritev, osveževanje), `chart.mjs` (grafi), `event-dialog.mjs`, `format.mjs`
 - `src/styles.css` – videz
-- `src/lib/ui.mjs` – izris pogledov
+- `src/lib/` – logika brez strani (s testi):
+- `src/lib/labels.mjs` – imena in vrstni red meritev na straneh
 - `src/lib/app.mjs` – polja, demo podatki in CSV
 - `src/lib/payload.mjs` – dekodiranje paketa FW2 in sporočila UG65
 - `src/lib/hourly.mjs` – urne vsote: SQL in povprečja

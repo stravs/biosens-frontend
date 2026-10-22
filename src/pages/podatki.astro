@@ -1,0 +1,44 @@
+---
+// Podatki: for experts. Charts, spectrometer and all readings for a chosen period.
+import Layout from '../layouts/Layout.astro';
+import TimeBar from '../components/TimeBar.astro';
+import { LABEL, LINES, SAMPLE, SPEC } from '../lib/labels.mjs';
+---
+<Layout view="podatki" title="Podatki">
+  <section id="expert">
+    <TimeBar />
+    <p class="muted small tb-hint">Namig: z miško povlecite čez graf, da povečate izbrani del. Časi so lokalni.</p>
+    <p id="empty" class="muted" hidden></p>
+
+    <div id="data">
+      <h2>Grafi</h2>
+      <p class="legend-row"><span><i class="sw band"></i>Običajno območje</span><span><i class="sw mark"></i>Posebni dogodek</span><span class="muted">Z miško ali prstom pokažite čas – vrednosti se pokažejo v vseh grafih.</span></p>
+      <div class="chart stack"><p id="stack-time" class="stack-time"></p><div id="graphs">
+        {LINES.map(key => <div class="ts row"><h3>{LABEL[key]}<span class="readout"></span></h3><div class="plot"></div></div>)}
+        <div class="axis"></div>
+      </div></div>
+
+      <h2>Spektrometer</h2>
+      <p class="muted">Naprava posveti skozi vodo in na 18 barvah svetlobe izmeri, koliko je pride skozi. Poceni senzor ne meri koncentracij, zato vse primerjamo z običajnim stanjem te naprave v zadnjem tednu. 0 = kot običajno, več = voda prepušča manj svetlobe kot običajno. Mulj zmanjša svetlobo povsod, rjava barva predvsem modro, alge pri 680 nm, modrozelene alge pri 610 nm.</p>
+      <article id="spectrum" class="chart"></article>
+      <div class="chart stack spec-stack"><p id="spec-time" class="stack-time"></p><div id="spec-graphs">
+        {SPEC.map(s => <div class="ts row"><h3>{s.title}<small class="hint">{s.hint}</small><span class="readout"></span></h3><div class="plot"></div></div>)}
+        <div class="axis"></div>
+      </div></div>
+      <article id="spec-heat" class="chart"></article>
+      <p class="muted small">Kaže spremembe, ne natančnih vrednosti. Če je voda dalj časa drugačna, se ji »običajno« sčasoma prilagodi.</p>
+
+      <details class="collapse">
+        <summary><h2>Vse meritve</h2></summary>
+        <p id="table-count" class="muted"></p>
+        <div class="scroll table-box" tabindex="0"><table>
+          <thead><tr><th>Čas</th>{SAMPLE.map(([key, f]) => <th>{LABEL[key] ?? f.title}{f.unit && <><br />{f.unit}</>}</th>)}</tr></thead>
+          <tbody id="readings"></tbody>
+        </table></div>
+      </details>
+    </div>
+    <div class="actions"><button type="button" id="csv" class="big">Prenesi izbrano obdobje (CSV)</button></div>
+  </section>
+</Layout>
+
+<script>import '../scripts/podatki.mjs';</script>

@@ -43,13 +43,13 @@ section > h2:first-child, section > div:first-child > h2:first-child, section > 
   background: rgb(255 255 255 / 92%); backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
 }
-.views button {
+.views a {
   display: grid; justify-items: center; gap: 2px; min-height: 68px; padding: 6px 2px;
   border: 0; border-radius: 16px; background: none; color: var(--muted);
-  font-size: 16px; font-weight: 650;
+  font-size: 16px; font-weight: 650; text-decoration: none;
 }
 .views svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.views button[aria-pressed="true"] { color: var(--accent); background: var(--accent-bg); }
+.views a[aria-current="page"] { color: var(--accent); background: var(--accent-bg); }
 
 /* Status hero */
 .status {
@@ -150,6 +150,7 @@ section > h2:first-child, section > div:first-child > h2:first-child, section > 
 .tp-presets button span { width: 18px; font-weight: 800; color: var(--accent); }
 .tp-presets button:hover { background: var(--bg); }
 .tp-presets button[aria-pressed="true"] { color: var(--accent); }
+.tp-presets button[aria-pressed="true"] span::before { content: '✓'; }
 .tp-custom { margin-top: 6px; padding: 10px 12px 4px; border-top: 1px solid var(--line); }
 .tp-custom p { margin: 0 0 6px; font-weight: 700; }
 .tp-custom label { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--muted); }
@@ -276,7 +277,7 @@ tr:last-child td { border-bottom: 0; }
 .facts [data-status="normal"] dd { color: var(--ok); }
 .facts [data-status="unusual"] dd { color: var(--warn); }
 .facts [data-status="attention"] dd { color: var(--bad); }
-#expert > p { max-width: 75ch; }
+#expert > p, #data > p { max-width: 75ch; }
 #maintenance .scroll { border-radius: var(--radius); box-shadow: var(--shadow); }
 
 /* Settings */
@@ -309,9 +310,9 @@ footer { margin: 40px auto 0; font-size: 16px; text-align: center; }
     grid-template-columns: repeat(4, auto); gap: 4px; padding: 6px;
     border: 0; border-radius: 999px; box-shadow: var(--shadow);
   }
-  .views button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: 999px; font-size: 17px; }
+  .views a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: 999px; font-size: 17px; }
   .views svg { width: 20px; height: 20px; }
-  .views button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .views a[aria-current="page"] { background: var(--accent); color: #fff; }
   h2 { font-size: 26px; margin: 40px 0 14px; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; align-items: start; }
   .cols > div > h2:first-child { margin-top: 4px; }

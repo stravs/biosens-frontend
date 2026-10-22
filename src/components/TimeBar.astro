@@ -1,0 +1,31 @@
+---
+// Time range control for Podatki, as in monitoring tools: back, presets / custom range, forward, zoom out.
+// Behaviour lives in scripts/podatki.mjs.
+import { PRESETS } from '../lib/timerange.mjs';
+---
+<div class="timebar sticky" role="group" aria-label="Časovno obdobje">
+  <button type="button" id="t-back" class="tb-icon" aria-label="Nazaj v času" title="Nazaj v času">‹</button>
+  <div class="tp">
+    <button type="button" id="t-open" class="tp-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="t-pop">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span class="tp-text"><b id="t-label"></b><small id="t-exact"></small></span>
+      <span class="tp-caret" aria-hidden="true">▾</span>
+    </button>
+    <div id="t-pop" class="tp-pop" role="dialog" aria-label="Izberi časovno obdobje" hidden>
+      <ul id="t-presets" class="tp-presets">
+        {PRESETS.map(p => <li><button type="button" data-preset={p.id} aria-pressed="false"><span aria-hidden="true"></span>{p.label}</button></li>)}
+      </ul>
+      <form id="t-custom" class="tp-custom">
+        <p>Po meri</p>
+        <label>Od <input type="datetime-local" id="t-from" required></label>
+        <label>Do <input type="datetime-local" id="t-to" required></label>
+        <button type="submit" class="big">Prikaži</button>
+        <p id="t-error" class="tp-error" role="alert"></p>
+      </form>
+    </div>
+  </div>
+  <button type="button" id="t-fwd" class="tb-icon" aria-label="Naprej v času" title="Naprej v času">›</button>
+  <button type="button" id="t-zoom" class="tb-icon" aria-label="Oddalji: dvakrat daljše obdobje" title="Oddalji">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M7.5 10.5h6"/></svg>
+  </button>
+</div>

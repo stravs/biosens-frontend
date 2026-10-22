@@ -1,4 +1,8 @@
 import { defineConfig } from 'astro/config';
 
-// Dev toolbar would cover the bottom tab bar on phones.
-export default defineConfig({ devToolbar: { enabled: false } });
+export default defineConfig({
+  // Dev toolbar would cover the bottom tab bar on phones.
+  devToolbar: { enabled: false },
+  // podatki.html, not podatki/index.html: Cloudflare serves it at /podatki, the address the nav links use.
+  build: { format: 'file' },
+});

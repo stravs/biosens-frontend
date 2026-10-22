@@ -1,0 +1,39 @@
+---
+// Page shell for every view: head, nav and the footer that says where the data comes from.
+import '../styles.css';
+
+interface Props { view: 'voda' | 'podatki' | 'naprava' | 'nastavitve'; title: string }
+const { view, title } = Astro.props;
+
+const NAV = [
+  { id: 'voda', href: '/', label: 'Voda', icon: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>' },
+  { id: 'podatki', href: '/podatki', label: 'Podatki', icon: '<path d="M4 19h16M6 15l4-5 4 3 5-7"/>' },
+  { id: 'naprava', href: '/naprava', label: 'Naprava', icon: '<rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10 17h4"/>' },
+  { id: 'nastavitve', href: '/nastavitve', label: 'Nastavitve', icon: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>' },
+];
+---
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f6f8">
+  <title>{title} · BioSens</title>
+</head>
+<body>
+  <header class="top">
+    <span class="brand">BioSens</span>
+    <nav class="views" aria-label="Pogled">
+      {NAV.map(item => (
+        <a href={item.href} aria-current={item.id === view ? 'page' : undefined}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" set:html={item.icon} />{item.label}
+        </a>
+      ))}
+    </nav>
+  </header>
+  <main>
+    <slot />
+  </main>
+  <footer id="source" class="muted"></footer>
+</body>
+</html>

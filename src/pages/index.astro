@@ -1,132 +1,16 @@
 ---
-import '../styles.css';
+// Voda: for everyone. One big answer, four cards and notable events.
+import Layout from '../layouts/Layout.astro';
+import EventDialog from '../components/EventDialog.astro';
 ---
-<!doctype html>
-<html lang="sl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f6f8">
-  <title>BioSens</title>
-  <script>import '../lib/ui.mjs';</script>
-</head>
-<body>
-  <header class="top">
-  <span class="brand">BioSens</span>
-  <nav class="views" aria-label="Pogled">
-    <button type="button" data-view="everyone">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>Voda</button>
-    <button type="button" data-view="expert">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M6 15l4-5 4 3 5-7"/></svg>Podatki</button>
-    <button type="button" data-view="maintenance">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10 17h4"/></svg>Naprava</button>
-    <button type="button" data-view="settings">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Nastavitve</button>
-  </nav>
-  </header>
+<Layout view="voda" title="Voda">
+  <section id="everyone">
+    <h1 id="status" class="status"></h1>
+    <div id="cards" class="cards"></div>
+    <h2>Posebni dogodki v zadnjih 24 urah</h2>
+    <ul id="events" class="events"></ul>
+  </section>
+  <EventDialog />
+</Layout>
 
-  <main>
-    <section id="everyone">
-      <h1 id="status" class="status"></h1>
-      <div id="cards" class="cards"></div>
-      <h2>Posebni dogodki v zadnjih 24 urah</h2>
-      <ul id="events" class="events"></ul>
-    </section>
-
-    <section id="expert" hidden>
-      <div class="timebar sticky" role="group" aria-label="Časovno obdobje">
-        <button type="button" id="t-back" class="tb-icon" aria-label="Nazaj v času" title="Nazaj v času">‹</button>
-        <div class="tp">
-          <button type="button" id="t-open" class="tp-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="t-pop">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-            <span class="tp-text"><b id="t-label"></b><small id="t-exact"></small></span>
-            <span class="tp-caret" aria-hidden="true">▾</span>
-          </button>
-          <div id="t-pop" class="tp-pop" role="dialog" aria-label="Izberi časovno obdobje" hidden>
-            <ul id="t-presets" class="tp-presets"></ul>
-            <form id="t-custom" class="tp-custom">
-              <p>Po meri</p>
-              <label>Od <input type="datetime-local" id="t-from" required></label>
-              <label>Do <input type="datetime-local" id="t-to" required></label>
-              <button type="submit" class="big">Prikaži</button>
-              <p id="t-error" class="tp-error" role="alert"></p>
-            </form>
-          </div>
-        </div>
-        <button type="button" id="t-fwd" class="tb-icon" aria-label="Naprej v času" title="Naprej v času">›</button>
-        <button type="button" id="t-zoom" class="tb-icon" aria-label="Oddalji: dvakrat daljše obdobje" title="Oddalji">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M7.5 10.5h6"/></svg>
-        </button>
-      </div>
-      <p class="muted small tb-hint">Namig: z miško povlecite čez graf, da povečate izbrani del. Časi so lokalni.</p>
-
-      <h2>Grafi</h2>
-      <p class="legend-row"><span><i class="sw band"></i>Običajno območje</span><span><i class="sw mark"></i>Posebni dogodek</span><span class="muted">Z miško ali prstom pokažite čas – vrednosti se pokažejo v vseh grafih.</span></p>
-      <div class="chart stack"><p id="stack-time" class="stack-time"></p><div id="graphs"></div></div>
-
-      <h2>Spektrometer</h2>
-      <p class="muted">Naprava posveti skozi vodo in na 18 barvah svetlobe izmeri, koliko je pride skozi. Poceni senzor ne meri koncentracij, zato vse primerjamo z običajnim stanjem te naprave v zadnjem tednu. 0 = kot običajno, več = voda prepušča manj svetlobe kot običajno. Mulj zmanjša svetlobo povsod, rjava barva predvsem modro, alge pri 680 nm, modrozelene alge pri 610 nm.</p>
-      <article id="spectrum" class="chart"></article>
-      <div class="chart stack spec-stack"><p id="spec-time" class="stack-time"></p><div id="spec-graphs"></div></div>
-      <article id="spec-heat" class="chart"></article>
-      <p class="muted small">Kaže spremembe, ne natančnih vrednosti. Če je voda dalj časa drugačna, se ji »običajno« sčasoma prilagodi.</p>
-
-      <details class="collapse">
-        <summary><h2>Vse meritve</h2></summary>
-        <p id="table-count" class="muted"></p>
-        <div class="scroll table-box" tabindex="0"><table>
-          <thead id="table-head"></thead>
-          <tbody id="readings"></tbody>
-        </table></div>
-      </details>
-      <div class="actions"><button type="button" id="csv" class="big">Prenesi izbrano obdobje (CSV)</button></div>
-    </section>
-
-    <section id="maintenance" class="cols" hidden>
-      <div>
-        <h2>Stanje naprave</h2>
-        <dl id="device" class="facts"></dl>
-      </div>
-      <div>
-        <h2>Zadnji paketi</h2>
-        <div class="scroll"><table>
-          <thead><tr><th>Čas</th><th>RSSI</th><th>SNR</th></tr></thead>
-          <tbody id="packets"></tbody>
-        </table></div>
-      </div>
-    </section>
-
-    <section id="settings" hidden>
-      <form id="settings-form" novalidate>
-        <h2>Običajna območja</h2>
-        <p class="muted">Za vsako meritev nastavite običajno območje (od–do) in mejo za hitro spremembo v eni uri. Meritev izven območja ali s hitrejšo spremembo je označena kot nenavadna. Prazno polje pomeni, da pravilo ni nastavljeno.</p>
-        <div id="rule-fields" class="set-cards"></div>
-
-        <h2>Spektrometer</h2>
-        <p class="muted">Opozori, ko naprava zazna za toliko odstotkov več kot običajno. Običajno je povprečno stanje te naprave v zadnjem tednu. Prazno polje pomeni brez opozorila.</p>
-        <div id="spec-fields" class="set-card set-grid"></div>
-
-        <h2>Naprava</h2>
-        <div class="set-card set-grid">
-          <label><span>Brez povezave po <span class="unit">min</span></span><input id="s-offline" type="number" inputmode="decimal" step="any"></label>
-          <label><span>Dober signal od <span class="unit">dBm</span></span><input id="s-rssi-good" type="number" inputmode="decimal" step="any"></label>
-          <label><span>Slab signal pod <span class="unit">dBm</span></span><input id="s-rssi-weak" type="number" inputmode="decimal" step="any"></label>
-        </div>
-
-        <p id="s-error" class="s-error" role="alert"></p>
-        <div class="actions">
-          <button type="button" id="s-reset" class="big secondary">Ponastavi na privzeto</button>
-          <button type="submit" class="big">Shrani</button>
-        </div>
-      </form>
-    </section>
-  </main>
-
-  <dialog id="event-dialog" class="sheet" aria-label="Podrobnosti dogodka">
-    <div id="event-body"></div>
-    <button type="button" id="event-close" class="big">Zapri</button>
-  </dialog>
-
-  <footer id="source" class="muted"></footer>
-</body>
-</html>
+<script>import '../scripts/voda.mjs';</script>
