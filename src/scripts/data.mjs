@@ -11,6 +11,10 @@ try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
 export const settings = loadSettings(saved);
 export const rules = settings.rules;
 
+// Minutes since the newest reading. The device counts as offline after settings.offlineMinutes.
+export const minutesAgo = week => Math.max(0, Math.round((Date.now() - week.rows.at(-1).receivedAt) / 60000));
+export const isOnline = week => minutesAgo(week) <= settings.offlineMinutes;
+
 // JSON from the Worker; null on error, or with no API (astro dev).
 export async function fetchJson(path) {
   try { const response = await fetch(path); if (response.ok) return await response.json(); } catch {}

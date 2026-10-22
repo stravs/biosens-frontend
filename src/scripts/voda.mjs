@@ -5,7 +5,7 @@ import { assessPoint, currentStatus, eventsInRange, timing } from '../lib/monito
 import { describe, eventText } from '../lib/plain.mjs';
 import { ALERT_KEYS } from '../lib/spectrum.mjs';
 import { fromQuery } from '../lib/timerange.mjs';
-import { live, loadWeek, rules } from './data.mjs';
+import { isOnline, live, loadWeek, rules } from './data.mjs';
 import { openEvent } from './event-dialog.mjs';
 import { $, clock, fmt, time } from './format.mjs';
 
@@ -16,6 +16,7 @@ const STATUS = {
   normal: { text: 'OK', icon: '✓' },
   unusual: { text: 'Nenavadno', icon: '!' },
   unknown: { text: 'Ni dovolj podatkov', icon: '?' },
+  offline: { text: 'Ni povezave', icon: '!' },
 };
 const WORD = { unusual: 'Nenavadno' };
 const CARD = 'flex flex-col px-4.5 py-4 rounded-card bg-card shadow-card md:px-5.5 md:py-3.5';
@@ -29,7 +30,8 @@ let events = [];
 
 function draw() {
   const { rows } = week, latest = rows.at(-1), t = timing(rows);
-  const { status } = currentStatus(rows, rules, ALERT_KEYS, t);
+  // Offline: the water status would be stale, so say that instead.
+  const status = isOnline(week) ? currentStatus(rows, rules, ALERT_KEYS, t).status : 'offline';
   $('status').dataset.status = status;
   $('status').innerHTML = `<span class="grid flex-none place-items-center size-15 rounded-full bg-current text-[30px] font-extrabold [-webkit-text-fill-color:var(--color-card)] group-data-[status=unusual]:bg-warn-dot group-data-[status=unusual]:[-webkit-text-fill-color:var(--color-ink)] md:size-14" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}
     <small class="ml-auto text-right text-[16px] font-medium leading-[1.3] tracking-normal text-muted md:text-[18px]">Zadnja meritev<br>${time(latest.receivedAt)}</small>`;
@@ -63,7 +65,7 @@ function draw() {
     : `<li class="${EVENT_ROW}"><em class="block py-3.5 not-italic font-semibold">V zadnjih 24 urah ni bilo nič posebnega.</em></li>`;
 }
 draw();
-live(week, gotNew => { if (gotNew) draw(); });
+live(week, draw); // connection state changes even without new data
 
 $('events').addEventListener('click', e => {
   const b = e.target.closest('[data-event]');
