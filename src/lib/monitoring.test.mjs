@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAIN_FIELDS, validateRules, hourChange, assessPoint, currentStatus, detectEvents, eventsInRange } from './monitoring.mjs';
+import { MAIN_FIELDS, validateRules, hourChange, assessPoint, currentStatus, detectEvents, eventsInRange, timing } from './monitoring.mjs';
 
 // Arbitrary fixtures for algorithm tests only; these are NOT suggested operating limits.
 const base = Date.parse('2026-10-22T00:00:00Z');
@@ -126,6 +126,36 @@ test('one-hour change looks back an hour by time, at any interval', () => {
   // Hourly averages: the previous point is the one an hour ago.
   assert.equal(hourChange(timed(3600000, [5, 8]), 1, 'temperature'), 3);
   assert.equal(hourChange(timed(9 * 3600000, [5, 8]), 1, 'temperature'), null);
+});
+
+test('averages more than 1.5 hours apart have no one-hour change', () => {
+  for (const hours of [1.5, 2]) assert.equal(hourChange(timed(hours * 3600000, [5, 8, 9]), 2, 'temperature'), null);
+});
+
+test('a change of interval is not a gap', () => {
+  const rows = [...timed(300000, Array(30).fill(10)), ...timed(60000, Array(200).fill(10))];
+  rows.slice(30).forEach(r => { r.receivedAt += 30 * 300000; });
+  assert.deepEqual(timing(rows).gap.map((g, i) => g && i).filter(Boolean), []);
+  assert.equal(hourChange(rows, 100, 'temperature'), 0); // looks back across the switch
+  rows.at(-1).receivedAt += 300000; // a missing sample is still a gap
+  assert.equal(timing(rows).gap.at(-1), true);
+});
+
+test('repeated timestamps do not hide gaps or turn off change alerts', () => {
+  const rows = timed(300000, Array.from({ length: 13 }, (_, i) => i)).flatMap(r => [r, { ...r }]);
+  assert.ok(timing(rows).gap.every(g => !g));
+  assert.equal(hourChange(rows, rows.length - 1, 'temperature'), 12);
+});
+
+test('the one-hour change uses the reading closest to an hour ago', () => {
+  const rows = timed(300000, Array.from({ length: 13 }, (_, i) => i));
+  rows.splice(1, 0, { ...rows[0], receivedAt: rows[0].receivedAt + 60000, temperature: 100 }); // 1 min late duplicate
+  assert.equal(hourChange(rows, rows.length - 1, 'temperature'), 12);
+});
+
+test('no rows or a missing index give no change instead of an error', () => {
+  assert.equal(hourChange([], -1, 'temperature'), null);
+  assert.equal(assessPoint([], -1, 'temperature').delta, null);
 });
 
 test('rule validation rejects incomplete, non-finite, inverted and nested-invalid limits', () => {
