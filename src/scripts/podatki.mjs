@@ -1,9 +1,9 @@
 // Podatki: charts for the main measurements, the spectrometer and a full table, for the chosen period.
 import { toCsv, rowValue } from '../lib/app.mjs';
-import { LINES, SAMPLE, SPEC } from '../lib/labels.mjs';
+import { LINES, SAMPLE } from '../lib/labels.mjs';
 import { transmission, wavelengthColor } from '../lib/spectrum.mjs';
 import { DEFAULT, PRESETS, clamp, fromInputValue, fromQuery, resolve, shift, snapToPreset, toInputValue, toQuery, zoomOut } from '../lib/timerange.mjs';
-import { AREA, PLOT, YLABEL, plot, specMeta, syncedHover } from './chart.mjs';
+import { AREA, PLOT, YLABEL, fillCharts, plot, syncedHover } from './chart.mjs';
 import { WEEK, fetchJson, live, loadWeek, prepare, rules } from './data.mjs';
 import { $, fmt, time } from './format.mjs';
 
@@ -73,7 +73,6 @@ let shown = { from: bounds.end - WEEK, to: bounds.end, bucket: null, ...week };
 let request = 0;
 const zoomTo = (from, to) => setRange({ from, to });
 const graphsHover = syncedHover($('graphs'), $('stack-time'), zoomTo);
-const specHover = syncedHover($('spec-graphs'), $('spec-time'), zoomTo);
 // Time range: one control above everything; charts, spectrometer, table and CSV all follow it.
 let current = resolve(fromQuery(location.search) ?? DEFAULT, bounds);
 // Averages are fetched for exactly the chosen period; their first bucket may start a little before it.
@@ -101,14 +100,6 @@ function drawEmpty(message) {
   $('empty').hidden = false;
   $('empty').textContent = message;
   graphsHover.set([], []);
-  specHover.set([], []);
-}
-// Chart rows are in the page; put each plot in its row and the time axis under the last one.
-function fillCharts(container, plots) {
-  const rowEls = [...container.querySelectorAll(':scope > .row')];
-  rowEls.forEach((row, i) => { row.querySelector('.plot').outerHTML = plots[i].html; });
-  container.querySelector(':scope > .axis').outerHTML = plots[0].axis;
-  return rowEls;
 }
 async function drawData() {
   drawTimeBar();
@@ -136,9 +127,6 @@ async function drawData() {
   graphsHover.set(range, LINES.map((key, i) => ({ key, el: rowEls[i], ...plots[i] })), newest);
   $('spectrum').innerHTML = spectrumCard(range, reference);
   $('spec-heat').innerHTML = heatmap(range, reference);
-  const specPlots = SPEC.map(s => plot(range, s.key, rules[s.key], marks(s.key), specMeta(s.key)));
-  const specEls = fillCharts($('spec-graphs'), specPlots);
-  specHover.set(range, SPEC.map((s, i) => ({ key: s.key, el: specEls[i], ...specPlots[i] })), newest);
   $('readings').innerHTML = range.slice().reverse().map(row =>
     `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
   $('table-count').textContent = shown.bucket ? `${range.length} povprečij po ${shown.bucket / 3600000} h, najnovejše zgoraj.` : `${range.length} meritev, najnovejše zgoraj.`;

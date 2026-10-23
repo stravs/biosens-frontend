@@ -1,17 +1,16 @@
 ---
-// Voda: for everyone. One big answer, four cards and notable events.
+// Voda: for everyone. One big answer, four cards and the spectrometer over the last 24 hours.
 import Layout from '../layouts/Layout.astro';
-import EventDialog from '../components/EventDialog.astro';
+import ChartStack from '../components/ChartStack.astro';
+import { SPEC } from '../lib/labels.mjs';
 ---
 <Layout view="voda" title="Voda">
   <section id="everyone">
     <!-- Colours follow data-status, set by scripts/voda.mjs -->
     <h1 id="status" class="group flex items-center gap-4 px-5 py-6 rounded-card text-[28px] font-bold leading-[1.15] tracking-[-0.02em] data-[status=normal]:bg-ok-bg data-[status=normal]:text-ok data-[status=unusual]:bg-warn-bg data-[status=unusual]:text-ink data-[status=offline]:bg-bad-bg data-[status=offline]:text-bad data-[status=unknown]:bg-line data-[status=unknown]:text-muted md:gap-5 md:px-6 md:py-4 md:text-[40px]"></h1>
     <div id="cards" class="grid grid-cols-[1fr] gap-3 mt-4 sm:grid-cols-[repeat(2,1fr)] md:grid-cols-[repeat(4,1fr)] md:gap-4 md:mt-5"></div>
-    <h2>Posebni dogodki v zadnjih 24 urah</h2>
-    <ul id="events" class="px-4.5 rounded-card bg-card shadow-card md:px-6"></ul>
+    <ChartStack id="spec-graphs" timeId="spec-time" top="top-0" items={SPEC} class="mt-3 md:mt-4" />
   </section>
-  <EventDialog />
 </Layout>
 
 <script>import '../scripts/voda.mjs';</script>

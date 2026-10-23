@@ -1,4 +1,4 @@
-// Time-series charts shared by Podatki and the event detail on Voda.
+// Time-series charts shared by Podatki and Voda.
 import { FIELDS, rowValue } from '../lib/app.mjs';
 import { AXIS_DIGITS, SPEC_BY_KEY } from '../lib/labels.mjs';
 import { mergeSpans, segments, ticks } from '../lib/series.mjs';
@@ -50,17 +50,25 @@ export function plot(rows, key, rule = {}, marks = [], meta = {}) {
   };
 }
 
+// Chart rows are in the page (components/ChartStack.astro); put each plot in its row and the time axis under the last one.
+export function fillCharts(container, plots) {
+  const rowEls = [...container.querySelectorAll(':scope > .row')];
+  rowEls.forEach((row, i) => { row.querySelector('.plot').outerHTML = plots[i].html; });
+  container.querySelector(':scope > .axis').outerHTML = plots[0].axis;
+  return rowEls;
+}
+
 // One crosshair for every chart in a container: pointing at a time shows that time in all charts.
-// With timeEl, the time is shown once there instead of under every value.
-// With onSelect, dragging across a chart with the mouse selects a time range (zoom in), as in Grafana.
+// The time is shown once in timeEl. With onSelect, dragging across a chart with the mouse selects
+// a time range (zoom in), as in Grafana.
 // set(rows, charts, newest): newest = time of the newest reading, shown as "zdaj" when the chart ends there.
-export function syncedHover(container, timeEl = null, onSelect = null) {
+export function syncedHover(container, timeEl, onSelect = null) {
   let rows = [], charts = [], newest = null, drag = null;
   const readout = (c, i) => {
     const v = c.values[i], unit = c.unit;
     const when = i == null ? (rows.at(-1).receivedAt === newest ? 'zdaj' : time(rows.at(-1).receivedAt)) : time(rows[i].receivedAt);
-    c.el.querySelector('.readout').innerHTML = `${fmt(i == null ? c.values.at(-1) : v, c.digits)}${unit ? ` ${unit}` : ''}${timeEl ? '' : `<small class="block text-[15px] font-medium tracking-normal text-muted">${when}</small>`}`;
-    if (timeEl) timeEl.textContent = i == null ? `Zadnja meritev · ${when}` : when;
+    c.el.querySelector('.readout').innerHTML = `${fmt(i == null ? c.values.at(-1) : v, c.digits)}${unit ? ` ${unit}` : ''}`;
+    timeEl.textContent = i == null ? `Zadnja meritev · ${when}` : when;
   };
   const show = i => charts.forEach(c => {
     const cursor = c.el.querySelector('.cursor'), dot = cursor.firstElementChild, v = c.values[i];

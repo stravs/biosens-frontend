@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { describe, eventText } from './plain.mjs';
+import { describe } from './plain.mjs';
 
 test('turbidity follows everyday clarity bands', () => {
   assert.equal(describe('turbidity', 0.4).answer, 'Bistra');
@@ -37,9 +37,4 @@ test('fluorescence is only compared with the normal range', () => {
 
 test('missing values are reported plainly', () => {
   assert.equal(describe('turbidity', NaN).answer, 'Ni podatka');
-});
-
-test('events read as plain sentences', () => {
-  assert.equal(eventText({ key: 'turbidity', type: 'change', direction: 1 }), 'Bistrost se je hitro zmanjšala');
-  assert.equal(eventText({ key: 'temperature', type: 'range', direction: -1 }), 'Temperatura je bila nižja kot običajno');
 });

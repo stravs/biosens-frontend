@@ -1,13 +1,13 @@
-// Voda: one big answer + four cards, and notable events in plain words, newest first.
+// Voda: one big answer + four cards, and the spectrometer indicators over the last 24 hours.
 import { FIELDS } from '../lib/app.mjs';
-import { MAIN } from '../lib/labels.mjs';
-import { assessPoint, currentStatus, eventsInRange, timing } from '../lib/monitoring.mjs';
-import { describe, eventText } from '../lib/plain.mjs';
+import { MAIN, SPEC } from '../lib/labels.mjs';
+import { assessPoint, currentStatus, timing } from '../lib/monitoring.mjs';
+import { describe } from '../lib/plain.mjs';
 import { ALERT_KEYS } from '../lib/spectrum.mjs';
 import { fromQuery } from '../lib/timerange.mjs';
+import { fillCharts, plot, specMeta, syncedHover } from './chart.mjs';
 import { isOnline, live, loadWeek, rules } from './data.mjs';
-import { openEvent } from './event-dialog.mjs';
-import { $, clock, fmt, time } from './format.mjs';
+import { $, fmt, time } from './format.mjs';
 
 // Links with a time range used to open Podatki from the front page; keep old bookmarks working.
 if (fromQuery(location.search)) location.replace(`/podatki${location.search}`);
@@ -21,12 +21,14 @@ const STATUS = {
 const WORD = { unusual: 'Nenavadno' };
 const CARD = 'flex flex-col px-4.5 py-4 rounded-card bg-card shadow-card md:px-5.5 md:py-3.5';
 const TONE = { normal: 'text-ok', unusual: 'text-warn' };
-const EVENT_ROW = 'border-b border-line last:border-b-0';
 const QUESTION = 'text-[18px] font-semibold text-muted';
-const word = state => state === 'normal' ? '' : `<p class="self-start mt-2.5 px-3 py-0.5 rounded-full bg-warn-bg text-[18px] font-bold">${WORD[state]}</p>`;
+// Always rendered; hidden (space kept) when normal, so card height and slider position stay the same.
+const word = state => `<p class="self-start mt-2.5 px-3 py-0.5 rounded-full bg-warn-bg text-[18px] font-bold${state === 'normal' ? ' invisible' : ''}">${WORD.unusual}</p>`;
+
+const DAY = 86400000;
 
 const week = await loadWeek();
-let events = [];
+const specHover = syncedHover($('spec-graphs'), $('spec-time'));
 
 function draw() {
   const { rows } = week, latest = rows.at(-1), t = timing(rows);
@@ -58,16 +60,12 @@ function draw() {
       ${word(state)}</div>`;
   }).join('');
 
-  events = eventsInRange(week.events, latest.receivedAt, 24).slice(0, 6);
-  $('events').innerHTML = events.length
-    ? events.map((ev, i) => `<li class="${EVENT_ROW}"><button type="button" data-event="${i}" class="group grid grid-cols-[14px_1fr_auto_16px] items-center gap-x-3 gap-y-0.5 w-full min-h-16 py-3 text-left font-semibold before:size-3.5 before:rounded-full before:bg-warn-dot md:grid-cols-[14px_auto_1fr_auto_16px] md:gap-4 md:min-h-0 md:py-[5px]">
-        <b class="text-[17px] font-semibold text-muted">${time(ev.start)}</b><em class="col-[2/4] not-italic underline-offset-4 group-hover:underline md:col-[3]">${eventText(ev)}</em><span class="col-[3] row-[1] px-2.5 rounded-full bg-page text-[16px] font-[650] whitespace-nowrap text-muted md:col-[4]">${ev.ongoing ? 'Še traja' : `Do ${clock(ev.end)}`}</span><i class="col-[4] row-[1/3] text-[30px] not-italic leading-none text-muted md:col-[5] md:row-[1]" aria-hidden="true">›</i></button></li>`).join('')
-    : `<li class="${EVENT_ROW}"><em class="block py-3.5 not-italic font-semibold">V zadnjih 24 urah ni bilo nič posebnega.</em></li>`;
+  const range = rows.filter(r => r.receivedAt >= latest.receivedAt - DAY), from = range[0].receivedAt;
+  const marks = key => week.events.filter(e => e.key === key && e.end >= from);
+  const specPlots = SPEC.map(s => plot(range, s.key, rules[s.key], marks(s.key), specMeta(s.key)));
+  const specEls = fillCharts($('spec-graphs'), specPlots);
+  specHover.set(range, SPEC.map((s, i) => ({ key: s.key, el: specEls[i], ...specPlots[i] })), latest.receivedAt);
 }
 draw();
 live(week, draw); // connection state changes even without new data
 
-$('events').addEventListener('click', e => {
-  const b = e.target.closest('[data-event]');
-  if (b) { const ev = events[+b.dataset.event]; openEvent(ev, week.rows, rules[ev.key]); }
-});

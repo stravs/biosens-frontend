@@ -102,8 +102,3 @@ export function detectEvents(rows, rules = {}, keys = MAIN_FIELDS) {
   }
   return events.sort((a, b) => b.start - a.start);
 }
-
-export function eventsInRange(events, end, hours) {
-  const start = end - hours * 3600000;
-  return events.filter(event => event.start <= end && event.end >= start);
-}

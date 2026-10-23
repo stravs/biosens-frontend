@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAIN_FIELDS, validateRules, hourChange, assessPoint, currentStatus, detectEvents, eventsInRange, timing } from './monitoring.mjs';
+import { MAIN_FIELDS, validateRules, hourChange, assessPoint, currentStatus, detectEvents, timing } from './monitoring.mjs';
 
 // Arbitrary fixtures for algorithm tests only; these are NOT suggested operating limits.
 const base = Date.parse('2026-10-22T00:00:00Z');
@@ -93,12 +93,6 @@ test('direction changes form separate chronological events', () => {
   assert.equal(events[0].direction, -1);
   assert.equal(events[1].direction, 1);
   assert.ok(events[0].start > events[1].start);
-});
-
-test('range filtering preserves the actual onset of events overlapping the window', () => {
-  const event = { start: base, end: base + 8 * 3600000 };
-  assert.deepEqual(eventsInRange([event], base + 10 * 3600000, 6), [event]);
-  assert.equal(eventsInRange([event], base + 20 * 3600000, 6).length, 0);
 });
 
 // Real readings: any interval, never exactly on time.

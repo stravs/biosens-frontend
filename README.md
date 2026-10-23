@@ -56,8 +56,8 @@ Opombe:
 
 ## Pogledi
 
-- **Voda** (`/`) – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in posebni dogodki.
-- **Podatki** (`/podatki`) – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spektrometer; tabela vseh meritev; prenos CSV.
+- **Voda** (`/`) – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in kazalniki spektrometra v zadnjih 24 urah.
+- **Podatki** (`/podatki`) – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spekter in toplotna karta spektrometra; tabela vseh meritev; prenos CSV.
 - **Naprava** (`/naprava`) – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
 - **Nastavitve** (`/nastavitve`) – običajna območja in prag hitre spremembe za vsako meritev, meje za opozorila spektrometra, čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`).
 
@@ -77,7 +77,7 @@ Kot v orodjih za spremljanje (Grafana, Datadog), logika v `src/lib/timerange.mjs
 Naprava je poceni: ne meri koncentracij, ampak zazna **spremembe**. Svetloba žarnice gre skozi vodo, 18 kanalov (AS7265x, 410–940 nm) izmeri, koliko je pride skozi. Vsak odčitek se primerja z **običajnim stanjem te naprave** = mediana po kanalih v zadnjem tednu (100 %). Umerjanje s čisto vodo ni potrebno (`src/lib/spectrum.mjs`).
 
 - **Spekter**: prepustnost v % običajnega po valovni dolžini, zdaj in na začetku obdobja.
-- **Kazalniki skozi čas** – za koliko % več svetlobe se izgubi kot običajno (0 = kot običajno, manj od 0 = manj kot običajno):
+- **Kazalniki skozi čas** (na pogledu Voda, zadnjih 24 ur) – za koliko % več svetlobe se izgubi kot običajno (0 = kot običajno, manj od 0 = manj kot običajno):
   - **Mulj in delci** – vsi kanali;
   - **Rjava barva** – modri del (410–435 nm) minus 860 nm. Pri 860 nm svetlobo zadržijo samo delci, zato se mulj odšteje;
   - **Alge** – dodatna izguba pri 680 nm glede na sosednja kanala (645, 705 nm);
@@ -93,8 +93,8 @@ Privzete meje v `demo-rules.mjs` so izmišljene, samo za prikaz.
 
 - `src/pages/` – ena stran na pogled: `index.astro` (Voda), `podatki.astro`, `naprava.astro`, `nastavitve.astro`. Kar se ne spreminja (meni, imena grafov, glava tabele, polja nastavitev), Astro zgradi vnaprej.
 - `src/layouts/Layout.astro` – glava, meni in noga za vse strani
-- `src/components/` – `TimeBar.astro` (izbira časa), `EventDialog.astro` (podrobnosti dogodka)
-- `src/scripts/` – koda v brskalniku, ena datoteka na stran (`voda.mjs`, `podatki.mjs` …); skupno: `data.mjs` (nastavitve, branje meritev, osveževanje), `chart.mjs` (grafi), `event-dialog.mjs`, `format.mjs`
+- `src/components/` – `TimeBar.astro` (izbira časa), `ChartStack.astro` (grafi z eno časovno osjo)
+- `src/scripts/` – koda v brskalniku, ena datoteka na stran (`voda.mjs`, `podatki.mjs` …); skupno: `data.mjs` (nastavitve, branje meritev, osveževanje), `chart.mjs` (grafi), `format.mjs`
 - Videz: Tailwind razredi kar v označbah (`.astro` in `src/scripts/`); barve, prelomi in osnova v `src/styles/global.css`
 - `src/lib/` – logika brez strani (s testi):
 - `src/lib/labels.mjs` – imena in vrstni red meritev na straneh
@@ -124,6 +124,6 @@ Pogled **Voda** vsako meritev prevede v preprost odgovor (`src/lib/plain.mjs`):
 | Fluorescenca | Organsko onesnaženje | manj / kot običajno / več kot običajno (glede na nastavljeno območje) | poročilo WaQuMoS: UV fluorescenca, podobna triptofanu, kot kazalnik fekalnega onesnaženja (E. coli) |
 
 Fluorescenca je v voltih in ni umerjena, zato se primerja samo z običajnim območjem naprave. Ne šteje bakterij.
-Spektrometer na pogledu Voda nima kartice; njegove spremembe (rjava barva, alge, modrozelene alge) se pokažejo med posebnimi dogodki.
+Spektrometer na pogledu Voda nima kartice; njegovi kazalniki (mulj, rjava barva, alge, modrozelene alge) so pod karticami kot grafi za zadnjih 24 ur.
 
 Viri: poročilo WaQuMoS (TLF, alge, mulj, železo); [WEDC: merjenje motnosti](https://wedc-knowledge.lboro.ac.uk/resources/booklets/G031-Measuring-turbidity-in-water-supplies-online.pdf); [Atlas Scientific: prevodnost vode](https://atlas-scientific.com/blog/water-conductivity-range/); [BGS: TLF in fekalno onesnaženje](https://www.bgs.ac.uk/news/real-time-detection-of-faecally-contaminated-drinking-water/).

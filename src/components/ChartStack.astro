@@ -1,0 +1,16 @@
+---
+// Stacked charts: one card, rows share one time axis. Desktop: name + value on the left,
+// plots touch so the pointer line is continuous. Plots are filled in by fillCharts() in scripts/chart.mjs.
+interface Props { id: string; timeId: string; items: { title: string; hint?: string }[]; top: string; class?: string }
+const { id, timeId, items, top, class: extra = '' } = Astro.props;
+
+const STACK_TIME = 'sticky z-4 -mx-4 px-4 pt-2 pb-1 bg-card text-[17px] font-bold tabular-nums md:-mx-6 md:pl-[298px]';
+const ROWS = '[--plot-h:96px] md:[--plot-h:104px] md:[&>.axis]:pl-[274px]';
+const ROW = 'ts row pt-2.5 pb-1.5 border-b border-line md:grid md:grid-cols-[210px_1fr] md:items-center md:gap-3 md:p-0';
+const H3 = 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1 text-[19px] font-[650] md:block md:m-0';
+const READOUT = 'readout ml-auto text-right text-[24px] font-[750] tracking-[-0.02em] tabular-nums md:block md:mt-1 md:ml-0 md:text-left';
+---
+<div class={`p-4 rounded-card bg-card shadow-card md:px-6 md:py-5 ${extra}`}><p id={timeId} class={`${STACK_TIME} ${top}`}></p><div id={id} class={ROWS}>
+  {items.map(item => <div class={ROW}><h3 class={H3}>{item.title}{item.hint && <small class="order-3 block basis-full text-[15px] font-medium text-muted">{item.hint}</small>}<span class={READOUT}></span></h3><div class="plot"></div></div>)}
+  <div class="axis"></div>
+</div></div>
