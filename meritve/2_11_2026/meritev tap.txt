@@ -1,0 +1,68 @@
+Device enters Normal mode without startup wait; send ATPRGMODE for programming mode.
+  CRC check ERROR , Generated new CRC: 40E4
+Data in eeprom is corrupted, Default coefficients was loaded, you have to call ATEEPROMW command to write in eepromSettings readed from EEPROM!
+Default setting, the measurement repeating mode is on
+Firmware version : 2.0.0
+EUREKA command list: ATALLDATA, ATCDATALIST, ATDATALIST, ATCDATAWL, ATDATAWL, ATFLUO, ATTEMPA, ATTEMPB, ATNEFELO, ATCOND, ATCOEFFS 
+EUREKA settings list: ATSTOP, ATSETTINGS 
+EUREKA memory functions and other settings are allowed in Programming mode and disabled in Normal mode 
+EUREKA choose mode: ATPRGMODE, ATPRGEXIT (no startup wait)
+
+Measurement started
+1.1792, -255.9375, -303.617, 0, 0, 0, -20.98, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+Measurement ended
+Measurement started
+2.1655, 13.5625, 181.474, 14, 13, 12, 27.49, 993.1, 1028.3, 1081.5, 951.7, 954.5, 972.5, 905.1, 917.0, 890.9, 916.5, 882.9, 946.9, 897.1, 896.6, 919.3, 919.0, 951.9, 937.4
+Measurement ended
+Measurement started
+2.1570, 13.6250, 181.418, 14, 13, 12, 27.31, 991.3, 1028.3, 1081.5, 950.3, 953.5, 971.5, 905.1, 917.9, 890.1, 916.5, 881.3, 946.5, 896.0, 895.0, 917.7, 917.7, 951.9, 937.4
+Measurement ended
+Measurement started
+2.1643, 13.6875, 181.362, 14, 14, 12, 27.46, 993.1, 1028.3, 1081.5, 950.3, 953.5, 971.5, 903.7, 916.2, 889.3, 916.5, 881.3, 945.0, 895.3, 894.2, 917.7, 917.9, 951.2, 936.8
+Measurement ended
+Measurement started
+2.1674, 13.7500, 182.260, 15, 13, 12, 27.29, 993.1, 1028.3, 1083.0, 951.7, 954.5, 971.5, 905.1, 917.0, 890.1, 916.5, 881.7, 946.1, 896.0, 895.0, 918.1, 918.4, 951.9, 937.4
+Measurement ended
+Measurement started
+2.1643, 13.8125, 182.036, 15, 14, 12, 27.13, 994.8, 1028.3, 1083.0, 951.7, 954.5, 972.5, 906.5, 917.9, 890.1, 916.5, 882.1, 946.9, 896.0, 895.5, 918.3, 918.6, 952.9, 937.4
+Measurement ended
+Measurement started
+Device enters Normal mode without startup wait; send ATPRGMODE for programming mode.
+  CRC check ERROR , Generated new CRC: 40E4
+Data in eeprom is corrupted, Default coefficients was loaded, you have to call ATEEPROMW command to write in eepromSettings readed from EEPROM!
+Default setting, the measurement repeating mode is on
+Firmware version : 2.0.0
+EUREKA command list: ATALLDATA, ATCDATALIST, ATDATALIST, ATCDATAWL, ATDATAWL, ATFLUO, ATTEMPA, ATTEMPB, ATNEFELO, ATCOND, ATCOEFFS 
+EUREKA settings list: ATSTOP, ATSETTINGS 
+EUREKA memory functions and other settings are allowed in Programming mode and disabled in Normal mode 
+EUREKA choose mode: ATPRGMODE, ATPRGEXIT (no startup wait)
+
+Measurement started
+2.1600, 13.8750, 182.036, 15, 14, 12, 27.84, 994.8, 1028.3, 1084.4, 953.1, 955.5, 972.5, 903.7, 917.0, 889.3, 917.3, 882.1, 943.6, 896.4, 895.2, 918.1, 918.6, 950.3, 937.4
+Measurement ended
+Measurement started
+2.1564, 13.8750, 180.464, 15, 14, 12, 27.49, 996.5, 1030.5, 1084.4, 953.1, 955.5, 973.5, 905.1, 918.8, 890.1, 917.3, 882.9, 944.3, 896.4, 895.5, 918.7, 920.4, 951.2, 938.0
+Measurement ended
+Device enters Normal mode without startup wait; send ATPRGMODE for programming mode.
+  CRC check ERROR , Generated new CRC: 40E4
+Data in eeprom is corrupted, Default coefficients was loaded, you have to call ATEEPROMW command to write in eepromSettings readed from EEPROM!
+Default setting, the measurement repeating mode is on
+Firmware version : 2.0.0
+EUREKA command list: ATALLDATA, ATCDATALIST, ATDATALIST, ATCDATAWL, ATDATAWL, ATFLUO, ATTEMPA, ATTEMPB, ATNEFELO, ATCOND, ATCOEFFS 
+EUREKA settings list: ATSTOP, ATSETTINGS 
+EUREKA memory functions and other settings are allowed in Programming mode and disabled in Normal mode 
+EUREKA choose mode: ATPRGMODE, ATPRGEXIT (no startup wait)
+
+Measurement started
+2.0905, 14.2500, 186.306, 15, 14, 12, 28.19, 996.5, 1030.5, 1087.3, 954.5, 957.5, 974.5, 906.5, 918.8, 893.2, 916.5, 883.6, 946.5, 898.6, 897.1, 920.1, 920.0, 951.9, 936.2
+Measurement ended
+Measurement started
+2.0905, 14.3750, 185.968, 15, 14, 14, 27.49, 1000.0, 1032.7, 1088.8, 956.0, 958.5, 975.5, 907.9, 921.3, 894.0, 918.0, 885.2, 948.7, 900.1, 898.4, 921.8, 922.0, 954.5, 938.0
+Measurement ended
+Measurement started
+2.0874, 14.4375, 185.744, 15, 14, 13, 27.49, 1000.0, 1032.7, 1088.8, 956.0, 958.5, 975.5, 907.9, 921.3, 893.2, 918.0, 884.8, 949.1, 899.3, 898.7, 921.6, 922.0, 955.2, 938.0
+Measurement ended
+Measurement started
+2.0831, 14.4375, 186.755, 15, 15, 13, 27.49, 1000.0, 1032.7, 1090.2, 956.0, 958.5, 976.6, 909.3, 922.2, 893.2, 919.4, 884.0, 949.4, 899.3, 897.1, 921.6, 921.3, 955.5, 939.9
+Measurement ended
+
