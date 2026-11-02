@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SAMPLES } from '../data/measurements.mjs';
+import { fiveReadings, PLOT_FIELDS, renderMeasurementChart, renderSpectrumChart } from '../lib/measurement-plot.mjs';
+import { DEFAULT_CALIBRATION, FLASH_CALIBRATION } from '../lib/measurement-calibration.mjs';
+const samples = fiveReadings(SAMPLES);
+---
+<Layout view="naprava" title="Meritve · 2. 11. 2026" showNavigation={false}>
+  <h1 class="mb-5 text-[30px] font-bold">Meritve · <time datetime="2026-11-02">2. 11. 2026</time></h1>
+  <section id="measurements" data-samples={JSON.stringify(samples)} class="relative rounded-card bg-card p-4 shadow-card md:p-6">
+    <label class="sr-only" for="measurement-field">Podatki</label>
+    <select id="measurement-field" class="mb-5 w-full rounded-xl border border-line bg-card px-4 py-3 text-ink md:w-auto">
+      {PLOT_FIELDS.map(f => <option value={f.key} title={f.note}>{f.label}</option>)}
+    </select>
+    <label for="measurement-calibration" class="mb-2 block text-[15px] font-semibold">Kalibracija</label>
+    <select id="measurement-calibration" class="mb-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-ink md:w-auto">
+      <option value="default">Privzeti koeficienti · izvorne meritve</option>
+      <option value="flash">Flash koeficienti · primerjalni preračun (nepreverjeno)</option>
+    </select>
+    <fieldset class="mb-4 flex flex-wrap gap-x-5 gap-y-3">
+      <legend class="sr-only">Vzorci</legend>
+      {samples.map(s => <label class="flex min-h-11 cursor-pointer items-center gap-2 text-[17px] font-semibold">
+        <input type="checkbox" name="sample" value={s.id} checked class="size-5 accent-accent" />
+        <span class="size-3 rounded-full" style={`background-color:${s.color}`} aria-hidden="true"></span>{s.label}
+      </label>)}
+    </fieldset>
+    <div id="measurement-plot" class="overflow-x-auto" aria-live="polite" set:html={renderMeasurementChart(samples)} />
+    <div id="measurement-tooltip" role="tooltip" aria-live="polite" hidden class="pointer-events-none absolute z-20 max-w-[calc(100%-16px)] rounded-2xl border border-line bg-card p-4 text-[15px] text-ink shadow-card" />
+  </section>
+  <section id="spectrum" aria-labelledby="spectrum-title" class="relative mt-5 rounded-card bg-card p-4 shadow-card md:p-6">
+    <h2 id="spectrum-title" class="mt-0 text-[22px]">Spektrometer · celoten spekter</h2>
+    <p class="mb-4 text-[14px] text-muted">Povprečje prvih petih veljavnih odčitkov za vsak vzorec · 18 kanalov, 410–940 nm. Prikazan je kalibriran odziv ATCDATA, ne koncentracija ali prepustnost v odstotkih. Vzorce izberete s potrditvenimi polji nad prvim grafom.</p>
+    <div id="measurement-spectrum" class="overflow-x-auto" aria-live="polite" set:html={renderSpectrumChart(samples)} />
+    <div id="spectrum-tooltip" role="tooltip" aria-live="polite" hidden class="pointer-events-none absolute z-20 max-w-[calc(100%-16px)] rounded-2xl border border-line bg-card p-4 text-[15px] text-ink shadow-card" />
+  </section>
+  <section aria-label="Prenos podatkov" class="mt-5">
+    <a href="/meritve.csv" download="biosens_meritve_vse.csv" class="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-5 py-3 text-[17px] font-semibold text-on-accent no-underline">Prenesi vse podatke (CSV)</a>
+  </section>
+  <section aria-labelledby="calibration-title" class="mt-5 text-[14px]">
+      <h2 id="calibration-title" class="text-[22px]">Primerjava koeficientov</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left tabular-nums">
+          <thead><tr><th class="p-2">Koeficient</th><th class="p-2">Privzeto</th><th class="p-2">Flash · nepreverjeno</th></tr></thead>
+          <tbody>{Object.entries(DEFAULT_CALIBRATION).map(([key, value]) => <tr class="border-t border-line"><th class="p-2 font-normal">{key}</th><td class="p-2">{value.toLocaleString('sl-SI', { maximumFractionDigits: 6 })}</td><td class="p-2">{FLASH_CALIBRATION[key as keyof typeof FLASH_CALIBRATION].toLocaleString('sl-SI', { maximumFractionDigits: 6 })}</td></tr>)}</tbody>
+        </table>
+      </div>
+  </section>
+</Layout>
+<script>import '../scripts/meritve.mjs';</script>

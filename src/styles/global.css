@@ -4,6 +4,9 @@
 /* touch: no mouse, so no hover or drag-to-zoom. */
 @custom-variant touch (@media (hover: none));
 
+/* dark: set on <html data-theme> by the script in Layout.astro. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @theme {
   /* sm: two cards per row. md: tab bar moves to the top, more room. */
   --breakpoint-*: initial;
@@ -24,11 +27,34 @@
   --color-bad-bg: #fde4e1;
   --color-accent: #1f5fbf;
   --color-accent-bg: #e6eefb;
+  --color-on-accent: #fff;
 
   --radius-card: 22px;
   --shadow-card: 0 1px 2px rgb(20 24 31 / 6%), 0 4px 16px rgb(20 24 31 / 6%);
   --container-page: 1200px;
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Dark mode: system setting unless the user picked one with the header button. */
+@layer base {
+  :root[data-theme=dark] {
+    color-scheme: dark;
+    --color-page: #0f1318;
+    --color-ink: #e8ecf1;
+    --color-muted: #9aa5b3;
+    --color-line: #2a313b;
+    --color-card: #181d24;
+    --color-ok: #5fd08a;
+    --color-ok-bg: #143322;
+    --color-warn: #e8c64a;
+    --color-warn-bg: #3a3112;
+    --color-bad: #ff8a80;
+    --color-bad-bg: #3d1a17;
+    --color-accent: #7aa7f0;
+    --color-accent-bg: #1c2a40;
+    --color-on-accent: #0f1318;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 16px rgb(0 0 0 / 30%);
+  }
 }
 
 /* Element defaults shared by every page (tables and some headings are filled in by scripts). */
