@@ -28,9 +28,16 @@ const SWATCH = 'inline-block w-5.5 h-3.5 rounded';
 
       <h2>Spektrometer</h2>
       <ChartStack id="spec-graphs" timeId="spec-time" top={UNDER_TIMEBAR} items={SPEC} class="mb-3" />
+      <label class="flex flex-wrap items-center gap-3 my-4 text-[17px] font-semibold">Prikaz spektra
+        <select id="spectrum-mode" class="min-h-12 px-3 rounded-xl border border-line bg-card text-ink">
+          <option value="measured">Odziv senzorja (a.u.)</option>
+          <option value="relative">Glede na običajno stanje (%)</option>
+        </select>
+      </label>
+      <p class="mb-3 text-[16px] text-muted">a.u. = poljubne enote kalibriranega odziva, ne koncentracija. Relativni prikaz primerja signal z mediano naloženih meritev, ne z referenco za meritev prepustnosti. Lestvica ostane enaka znotraj naloženega obdobja.</p>
       <article id="spectrum" class={CARD}></article>
-      <article id="spec-heat" class={`${CARD} mt-3`}></article>
-      <p class={`${NOTE} text-[16px]`}>Kaže spremembe, ne natančnih vrednosti. Če je voda dalj časa drugačna, se ji »običajno« sčasoma prilagodi.</p>
+      <article id="spec-heat" class={`${CARD} relative mt-3`}></article>
+      <p class={`${NOTE} text-[16px]`}>Vrednost 6.553,5 a.u. lahko pomeni omejitev pri prenosu (nasičenost), ne natančne meritve.</p>
 
       <details class="group mt-9 px-4.5 rounded-card bg-card shadow-card open:pb-4.5">
         <summary class="flex items-center justify-between py-4.5 list-none cursor-pointer [&::-webkit-details-marker]:hidden after:size-2.5 after:mr-1.5 after:mb-1.5 after:border-r-[2.5px] after:border-b-[2.5px] after:border-muted after:rotate-45 after:transition-transform after:duration-150 group-open:after:mb-0 group-open:after:-rotate-135"><h2 class="m-0">Vse meritve</h2></summary>
