@@ -1,0 +1,12 @@
+---
+// Switch between the current Voda page and the sketches.
+interface Props { current: number }
+const { current } = Astro.props;
+const LINKS = [['/', 'Trenutna'], ['/skice/voda-1', '1 · Semafor'], ['/skice/voda-2', '2 · Dan'], ['/skice/voda-3', '3 · Trendi']];
+---
+<nav aria-label="Skice" class="flex flex-wrap gap-2 mb-4 text-[16px] font-semibold">
+  {LINKS.map(([href, label], i) => (
+    <a href={href} aria-current={i === current ? 'page' : undefined}
+      class="px-3.5 py-1.5 rounded-full bg-card text-muted no-underline shadow-card aria-[current=page]:bg-accent aria-[current=page]:text-on-accent">{label}</a>
+  ))}
+</nav>

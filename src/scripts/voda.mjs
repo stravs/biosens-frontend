@@ -35,13 +35,13 @@ function draw() {
   // Offline: the water status would be stale, so say that instead.
   const status = isOnline(week) ? currentStatus(rows, rules, ALERT_KEYS, t).status : 'offline';
   $('status').dataset.status = status;
-  $('status').innerHTML = `<span class="grid flex-none place-items-center size-15 rounded-full bg-current text-[30px] font-extrabold [-webkit-text-fill-color:var(--color-card)] group-data-[status=unusual]:bg-warn-dot group-data-[status=unusual]:[-webkit-text-fill-color:var(--color-ink)] md:size-14" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}
+  $('status').innerHTML = `<span class="grid flex-none place-items-center size-15 rounded-full bg-current text-[30px] font-extrabold [-webkit-text-fill-color:var(--color-card)] group-data-[status=unusual]:bg-warn-dot group-data-[status=unusual]:[-webkit-text-fill-color:#14181f] md:size-14" aria-hidden="true">${STATUS[status].icon}</span>${STATUS[status].text}
     <small class="ml-auto text-right text-[16px] font-medium leading-[1.3] tracking-normal text-muted md:text-[18px]">Zadnja meritev<br>${time(latest.receivedAt)}</small>`;
   $('cards').innerHTML = Object.entries(MAIN).map(([key, { name, digits }]) => {
     const point = assessPoint(rows, rows.length - 1, key, rules[key], t);
     const state = point.severity || point.changed ? 'unusual' : 'normal';
     const plain = describe(key, latest[key], rules[key]);
-    const scale = plain.position == null ? '' : `<div class="mt-auto pt-2.5" aria-hidden="true"><div class="relative h-2.5 rounded-full bg-linear-to-r from-accent-bg to-[#b9cdee]"><i class="absolute top-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-3 border-card bg-ink shadow-card" style="left:${(plain.position * 100).toFixed(1)}%"></i></div>
+    const scale = plain.position == null ? '' : `<div class="mt-auto pt-2.5" aria-hidden="true"><div class="relative h-2.5 rounded-full bg-linear-to-r from-accent-bg to-accent/35"><i class="absolute top-1/2 size-5.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-3 border-card bg-ink shadow-card" style="left:${(plain.position * 100).toFixed(1)}%"></i></div>
         <div class="flex justify-between mt-1.5 text-[15px] text-muted"><span>${plain.ends[0]}</span><span>${plain.ends[1]}</span></div></div>`;
     if (plain.answer == null) {
       // Number-only card (temperature): big value + change over the last hour.

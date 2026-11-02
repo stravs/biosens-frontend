@@ -1,0 +1,15 @@
+---
+// Sketch 2 · Dan: which hour each measurement was off, and what happened, in words.
+import Layout from '../../layouts/Layout.astro';
+import SketchNav from '../../components/SketchNav.astro';
+---
+<Layout view="voda" title="Voda · skica 2">
+  <SketchNav current={2} />
+  <h1 id="status"></h1>
+  <h2>Zadnjih 24 ur, uro za uro</h2>
+  <div id="grid" class="px-4 py-4 rounded-card bg-card shadow-card md:px-6"></div>
+  <h2>Kaj se je zgodilo</h2>
+  <ol id="events" class="divide-y divide-line rounded-card bg-card shadow-card"></ol>
+</Layout>
+
+<script>import '../../scripts/skice/voda-2.mjs';</script>

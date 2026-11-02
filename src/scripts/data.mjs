@@ -1,4 +1,4 @@
-// Shared by the pages: settings, readings from the Worker (or demo data) and live refresh.
+// Shared settings, explicit demo mode, and live readings. Failures never generate measurements.
 import { buildDemoData } from '../lib/app.mjs';
 import { EVENT_KEYS } from '../lib/labels.mjs';
 import { detectEvents } from '../lib/monitoring.mjs';
@@ -6,62 +6,92 @@ import { STORAGE_KEY, loadSettings } from '../lib/settings.mjs';
 import { baseline, indicators } from '../lib/spectrum.mjs';
 
 export const WEEK = 7 * 86400000;
+const POLL_MS = 120000;
+const demo = new URLSearchParams(location.search).get('demo') === '1';
 let saved = null;
 try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
 export const settings = loadSettings(saved);
 export const rules = settings.rules;
-
-// Minutes since the newest reading. The device counts as offline after settings.offlineMinutes.
 export const minutesAgo = week => Math.max(0, Math.round((Date.now() - week.rows.at(-1).receivedAt) / 60000));
 export const isOnline = week => minutesAgo(week) <= settings.offlineMinutes;
 
-// JSON from the Worker; null on error, or with no API (astro dev).
+function source(message, warning = false) {
+  const el = document.getElementById('source');
+  el.textContent = message;
+  el.setAttribute('role', warning ? 'alert' : 'status');
+  el.classList.toggle('text-bad', warning);
+}
+
 export async function fetchJson(path) {
-  try { const response = await fetch(path); if (response.ok) return await response.json(); } catch {}
+  try {
+    const response = await fetch(path, { signal: AbortSignal.timeout(15000) });
+    if (response.ok) return await response.json();
+  } catch {}
   return null;
 }
 
-// Spectrometer readings are compared with the device's own normal: the per-channel median of the given readings.
 export function prepare(raw) {
   const reference = baseline(raw);
   const rows = raw.map(r => ({ ...r, ...indicators(r.spectrum, reference) }));
   return { reference, rows, events: detectEvents(rows, rules, EVENT_KEYS) };
 }
 
-// The week up to the newest reading, and bounds = first and last reading ever.
-// Demo data only while the device has sent nothing.
 export async function loadWeek() {
-  const week = await fetchJson('/api/readings');
-  const simulated = !week?.rows.length;
-  document.getElementById('source').textContent = simulated
-    ? 'Ni podatkov z naprave: prikazani so simulirani podatki. Privzete meje so izmišljene.'
-    : 'Podatki z naprave. Privzete meje so izmišljene.';
-  const data = prepare(simulated ? buildDemoData(1) : week.rows);
-  const bounds = simulated ? { start: data.rows[0].receivedAt, end: data.rows.at(-1).receivedAt } : { start: week.start, end: week.end };
-  return { simulated, bounds, ...data };
+  if (demo) {
+    source('DEMO: simulirani podatki. Privzete meje so izmišljene.', true);
+    document.querySelectorAll('nav a').forEach(a => { a.search = '?demo=1'; });
+    const data = prepare(buildDemoData(1));
+    return { simulated: true, bounds: { start: data.rows[0].receivedAt, end: data.rows.at(-1).receivedAt }, ...data };
+  }
+  // Keep page scripts waiting until real data exists. No dummy rows and no broken empty charts.
+  const main = document.querySelector('main');
+  main.hidden = true;
+  for (;;) {
+    const week = await fetchJson('/api/readings');
+    if (week?.rows.length) {
+      main.hidden = false;
+      source('Podatki z naprave. Privzete meje so izmišljene.');
+      return { simulated: false, cursor: week.cursor, bounds: { start: week.start, end: week.end }, ...prepare(week.rows) };
+    }
+    source(week ? 'Ni meritev z naprave. Ponovni poskus čez 2 minuti; za takojšen poskus osvežite stran.'
+      : 'Podatkov ni mogoče naložiti. Ponovni poskus čez 2 minuti; za takojšen poskus osvežite stran.', true);
+    await new Promise(resolve => setTimeout(resolve, POLL_MS));
+  }
 }
 
-// Live: once a minute, fetch only readings newer than the last one (cheap: just the new rows are read),
-// update the week in place and call onPoll(gotNew). Paused while the tab is hidden.
-// With demo data, the page reloads as soon as the device has sent something.
 export function live(week, onPoll) {
+  if (week.simulated) return;
   let busy = false;
   async function poll() {
     if (document.hidden || busy) return;
     busy = true;
     try {
-      if (week.simulated) { if ((await fetchJson('/api/readings'))?.rows.length) location.reload(); return; }
-      const from = week.rows.at(-1).receivedAt + 1;
-      const data = await fetchJson(`/api/readings?from=${from}&to=${from + WEEK}`);
-      const gotNew = Boolean(data?.rows.length);
+      // An insertion cursor also catches delayed packets whose event time predates the newest reading.
+      let cursor = week.cursor, data, incoming = [];
+      do {
+        data = await fetchJson(`/api/readings?since=${cursor}`);
+        if (!data) {
+          source('Osveževanje ne deluje. Prikazane so zadnje naložene meritve; preverite njihov čas.', true);
+          onPoll(false);
+          return;
+        }
+        incoming.push(...data.rows);
+        incoming = incoming.filter(r => r.receivedAt >= data.end - WEEK);
+        cursor = data.cursor;
+      } while (data.hasMore);
+      source('Podatki z naprave. Privzete meje so izmišljene.');
+      week.cursor = cursor;
+      const gotNew = Boolean(incoming.length);
       if (gotNew) {
-        const end = data.rows.at(-1).receivedAt;
-        Object.assign(week, prepare([...week.rows, ...data.rows].filter(r => r.receivedAt >= end - WEEK)));
+        const end = data.end;
+        const rows = [...week.rows, ...incoming].filter(r => r.receivedAt >= end - WEEK).sort((a, b) => a.receivedAt - b.receivedAt);
+        Object.assign(week, prepare(rows));
+        week.bounds.start = data.start;
         week.bounds.end = end;
       }
       onPoll(gotNew);
     } finally { busy = false; }
   }
-  setInterval(poll, 60000);
+  setInterval(poll, POLL_MS);
   document.addEventListener('visibilitychange', poll);
 }

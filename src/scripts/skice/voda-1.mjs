@@ -1,0 +1,38 @@
+// Sketch 1 · Semafor.
+import { live, loadWeek } from '../data.mjs';
+import { $, clock, time } from '../format.mjs';
+import { KEYS, STATUS, hours, sentence, snapshot } from './common.mjs';
+import { SPEC_BY_KEY, MAIN } from '../../lib/labels.mjs';
+
+const week = await loadWeek();
+
+function draw() {
+  const now = snapshot(week), s = STATUS[now.status];
+  $('hero').innerHTML = `<div class="flex flex-col items-center justify-center gap-3 min-h-[42vh] px-6 py-10 rounded-card text-center ${s.tone}">
+    <span class="grid place-items-center size-24 rounded-full ${s.dot} text-[52px] font-extrabold text-card" aria-hidden="true">${s.icon}</span>
+    <h1 class="text-[40px] font-extrabold leading-[1.1] tracking-[-0.02em] md:text-[60px]">${s.title}</h1>
+    <p class="max-w-[30ch] text-[21px] font-medium md:text-[24px]">${sentence(now)}</p>
+    <p class="text-[16px] text-muted">Zadnja meritev ${time(now.latest.receivedAt)}</p></div>`;
+
+  $('list').innerHTML = now.items.map(i => `<li class="flex items-center gap-3 px-4.5 py-4">
+    <span class="flex-none size-3.5 rounded-full ${i.unusual ? 'bg-warn-dot' : 'bg-ok'}" aria-hidden="true"></span>
+    <span class="flex-1 text-[18px] font-semibold text-muted">${i.question}</span>
+    <b class="text-right ${i.unusual ? 'px-2.5 rounded-full bg-warn-bg' : ''}">${i.answer}</b></li>`).join('');
+
+  const day = hours(week);
+  const name = k => SPEC_BY_KEY[k]?.title ?? MAIN[k].name;
+  const cell = h => {
+    const odd = KEYS.filter(k => h.state[k] === 'unusual'), none = KEYS.every(k => h.state[k] === 'none');
+    const bg = none ? 'bg-line' : odd.length ? 'bg-warn-dot' : 'bg-ok/30';
+    const tip = `${clock(h.start)}–${clock(h.end)}: ${none ? 'ni meritev' : odd.length ? odd.map(name).join(', ') : 'v redu'}`;
+    return `<span class="flex-1 h-14 rounded-md ${bg}" title="${tip}"></span>`;
+  };
+  $('day').innerHTML = `<div class="flex gap-0.5 md:gap-1">${day.map(cell).join('')}</div>
+    <div class="flex justify-between mt-1.5 text-[15px] text-muted"><span>pred 24 h</span><span>pred 12 h</span><span>zdaj</span></div>
+    <p class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[15px] text-muted">
+      <span class="inline-flex items-center gap-1.5"><i class="size-3 rounded-sm bg-ok/30"></i>v redu</span>
+      <span class="inline-flex items-center gap-1.5"><i class="size-3 rounded-sm bg-warn-dot"></i>nenavadno</span>
+      <span class="inline-flex items-center gap-1.5"><i class="size-3 rounded-sm bg-line"></i>ni meritev</span></p>`;
+}
+draw();
+live(week, draw);

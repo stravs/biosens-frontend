@@ -1,6 +1,6 @@
 # BioSens frontend
 
-Preprosta Astro stran z velikimi črkami, ena stran za vsak pogled. Prikazuje podatke z naprave (UG65 → Cloudflare). Dokler jih ni (ali v `npm run dev`, kjer ni API-ja), pokaže simulirane podatke in to napiše v nogi.
+Preprosta Astro stran z velikimi črkami, ena stran za vsak pogled. Prikazuje podatke z naprave (UG65 → Cloudflare). Brez meritev ali ob napaki API-ja pokaže opozorilo, nikoli izmišljenih meritev. Za izrecen prikaz simulacije odprite `/?demo=1` (tudi v `npm run dev`, kjer ni API-ja).
 
 ## Zagon
 
@@ -12,16 +12,17 @@ npm run build      # statična stran v dist/
 
 ## Objava na Cloudflare Workers
 
-Astro zgradi `dist/`, Worker (`worker/index.mjs`) streže stran in API `/api/*`. Podatki so v bazi D1 `biosens`; ob prvi objavi jo wrangler ustvari sam, tabela se ustvari ob prvi uporabi.
+Astro zgradi `dist/`, Worker (`worker/index.mjs`) streže stran in API `/api/*`. Podatki so v bazi D1 `biosens`; shemo upravljajo verzionirane migracije v `migrations/`. Pred prvo migracijo mora baza obstajati in biti povezana z bindingom `DB` (po potrebi `npx wrangler d1 create biosens` in izpisani `database_id` v `wrangler.jsonc`). Obstoječih podatkov migracije ne brišejo.
 
 ```sh
 npx wrangler login                    # enkrat
 npx wrangler secret put UPLINK_TOKEN  # enkrat: dolg naključen niz, npr. openssl rand -hex 24
+npx wrangler secret put DEVICE_EUI    # DevEUI edine dovoljene naprave
 npm run preview:worker                # lokalno, kot na Cloudflare (lokalna D1)
-npm run deploy                        # zgradi in objavi
+npm run deploy                        # zgradi, izvede migracije, objavi
 ```
 
-Za samodejno objavo ob vsakem pushu povežite repozitorij v Cloudflare (Workers Builds): ukaz za gradnjo `npm run build`, ukaz za objavo `npx wrangler deploy`.
+Za samodejno objavo ob vsakem pushu povežite repozitorij v Cloudflare (Workers Builds): ukaz za gradnjo `npm run build`, ukaz za objavo `npx wrangler d1 migrations apply biosens --remote && npx wrangler deploy`. Lokalni skrivnosti nastavite v `.dev.vars` (`UPLINK_TOKEN` in `DEVICE_EUI`); datoteke ne oddajte v git. Operativni postopki so v [OPERATIONS.md](OPERATIONS.md).
 
 ## Podatki z naprave (UG65 → Cloudflare)
 
@@ -32,14 +33,14 @@ naprava ──LoRa──▶ UG65 (vgrajen Network Server) ──HTTPS POST──
 stran ◀── /api/readings (do 7 dni) ali /api/hours (dlje) ◀── Worker
 ```
 
-- **`POST /api/uplink`** – JSON iz UG65 (`devEUI`, `data` v base64, `rxInfo[].rssi`, `rxInfo[].loRaSNR`). Žeton v glavi `Authorization: Bearer …` ali v naslovu `?token=…`. Shrani čas prejema, devEUI, RSSI, SNR in surove bajte. Paket, ki nima 50 bajtov, zavrne (400).
-- **`GET /api/readings?from=&to=`** (ms) – posamezne meritve, največ 8 dni naenkrat. Brez parametrov: teden do zadnje meritve. Vrne `{ start, end, rows }`; `start`/`end` sta prva in zadnja meritev sploh.
+- **`POST /api/uplink`** – JSON iz UG65 (`devEUI`, `data` v base64, `rxInfo[].rssi`, `rxInfo[].loRaSNR`). Žeton v glavi `Authorization: Bearer …` ali v naslovu `?token=…`. Shrani čas dogodka (`time` ali `rxInfo[].time`, ISO 8601), čas prejema, devEUI, RSSI, SNR in surove bajte. DevEUI mora ustrezati `DEVICE_EUI`. Zahtevan je stabilen ID sporočila (`deduplicationId` ali `id`) ali čas dogodka + `fCnt`; brez tega vrne 400. Ponovljen dogodek se potrdi z 204, vendar se ne shrani ali povpreči dvakrat. Brez časa dogodka se pri sporočilih s stabilnim ID uporabi čas prejema. Paket, ki nima 50 bajtov, zavrne (400).
+- **`GET /api/readings?from=&to=`** (ms) – posamezne meritve, največ 8 dni naenkrat. Brez parametrov: teden do zadnje meritve. Vrne `{ start, end, cursor, rows }`; `start`/`end` sta prva in zadnja meritev sploh.
 - **`GET /api/hours?from=&to=`** (ms) – povprečja za katerokoli obdobje, v celih urah, največ 1000 točk (leto ≈ po 9 ur). Vrne `{ bucket, rows }`; vrstice imajo `count` = koliko meritev je povprečenih.
 - Tabela `hours` hrani vsote po urah (`src/lib/hourly.mjs`); vsak paket se ob prejemu prišteje k svoji uri. Leto je ~8.800 vrstic namesto ~105.000 meritev, zato je dolgo obdobje poceni za branje (D1 brezplačno: 5 milijonov prebranih vrstic na dan).
 - Shranjeno ostane vse, nič se ne briše (~50 KB na dan pri meritvi na 5 min).
-- Stran se osvežuje sama: vsako minuto vpraša samo po meritvah, novejših od zadnje (ko je zavihek skrit, počaka). Podatki sledijo novim meritvam pri izbiri do 7 dni (npr. »Zadnjih 24 ur«); izbrano obdobje in urna povprečja ostanejo, kot so.
+- Stran se osvežuje sama: vsaki 2 minuti vpraša samo po novih vnosih z `/api/readings?since=<cursor>` (največ 5000 na odgovor, nato nadaljuje z vrnjenim kurzorjem); tako ujame tudi zakasnele pakete (ko je zavihek skrit, počaka). Podatki sledijo novim meritvam pri izbiri do 7 dni (npr. »Zadnjih 24 ur«); izbrano obdobje in urna povprečja ostanejo, kot so.
 - Voda in Naprava uporabljata teden do zadnje meritve. Podatki naložijo izbrano obdobje, ko ga izberete: do 7 dni posamezne meritve skupaj s tednom pred koncem obdobja (»običajno« spektrometra = mediana tega tedna), dlje urna povprečja (»običajno« = mediana obdobja). Dogodki pri povprečjih so grobi.
-- Dekodiranje je v `src/lib/payload.mjs` po `compressor()` iz firmware: 18 kanalov (A…L, ×10), motnost ×100, EC25 ×10, temperatura ×1000, fluorescenca ×10, fluorescenčni signal ×10000 – vse uint16, little-endian; nato temperature čipov 3, 2, 1 in ID naprave. Shranjeni so surovi bajti, zato popravek dekoderja velja tudi za stare meritve. Urne vsote pa se ne popravijo same: po spremembi dekoderja jih je treba preračunati iz `uplinks`.
+- Dekodiranje je v `src/lib/payload.mjs` po `compressor()` iz firmware: 18 kanalov (A…L, ×10), motnost ×100, EC25 ×10, temperatura ×1000, fluorescenca ×10, fluorescenčni signal ×10000 – vse uint16, little-endian; nato temperature čipov 3, 2, 1 in ID naprave. Shranjeni so surovi bajti, zato popravek dekoderja velja tudi za stare meritve. Urne vsote pa se ne popravijo same: po spremembi dekoderja jih je treba preračunati iz `uplinks` z `npm run rebuild:hours` (postopek v `OPERATIONS.md`). Zgodovinski API-odgovori z izrecnim koncem vsaj eno uro v preteklosti se na Cloudflare predpomnijo za 60 sekund; živi podatki se ne predpomnijo.
 
 ### Nastavitev UG65
 
@@ -51,7 +52,7 @@ stran ◀── /api/readings (do 7 dni) ali /api/hours (dlje) ◀── Worker
 
 Opombe:
 - Firmware negativne vrednosti pošlje kot 0 (tudi temperaturo pod 0 °C), kanali spektra pa so omejeni na 6553,5 (uint16/10).
-- Stran prikaže eno napravo; več naprav bi se na grafih pomešalo.
+- Stran in urne vsote prikazujejo eno napravo; druge DevEUI Worker zavrne. Pred uvedbo preverite, da stara baza ne vsebuje več naprav.
 - Branje `/api/readings` je javno, kot stran. Zaprete ju lahko s Cloudflare Access.
 
 ## Pogledi

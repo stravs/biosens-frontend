@@ -14,6 +14,12 @@ export const HOURS_TABLE = `CREATE TABLE IF NOT EXISTS hours (hour INTEGER PRIMA
 export const ADD_TO_HOUR = `INSERT INTO hours (hour, n, ${COLUMNS.join(', ')}) VALUES (?, 1, ${COLUMNS.map(() => '?').join(', ')})
   ON CONFLICT (hour) DO UPDATE SET n = n + 1, ${COLUMNS.map(c => `${c} = ${c} + excluded.${c}`).join(', ')}`;
 
+// Only aggregate a newly inserted attempt; a retried event has a different attempt id.
+export const ADD_NEW_TO_HOUR = ADD_TO_HOUR.replace(
+  /VALUES \((.*?)\)\n/,
+  'SELECT $1 WHERE EXISTS (SELECT 1 FROM uplinks WHERE attempt_id = ?)\n',
+);
+
 export const hourStart = ms => Math.floor(ms / HOUR) * HOUR;
 export const hourlyValues = reading => [...MEASURES.map(key => reading[key]), ...reading.spectrum.map(c => c.value)];
 

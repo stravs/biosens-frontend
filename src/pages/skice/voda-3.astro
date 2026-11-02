@@ -1,0 +1,14 @@
+---
+// Sketch 3 · Trendi: a tile per measurement with its value and the last 24 hours as a sparkline.
+import Layout from '../../layouts/Layout.astro';
+import SketchNav from '../../components/SketchNav.astro';
+---
+<Layout view="voda" title="Voda · skica 3">
+  <SketchNav current={3} />
+  <h1 id="status"></h1>
+  <div id="main" class="grid gap-3 mt-4 sm:grid-cols-2 md:grid-cols-4 md:gap-4"></div>
+  <h2>Spektrometer</h2>
+  <div id="spec" class="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4"></div>
+</Layout>
+
+<script>import '../../scripts/skice/voda-3.mjs';</script>

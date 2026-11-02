@@ -2,3 +2,12 @@ node_modules/
 dist/
 .astro/
 .wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+# Operational exports can contain sensor history; migrations remain tracked.
+/backups/
+/uplinks.sql
+/rebuilt-hours.sql
+/biosens-backup.sql

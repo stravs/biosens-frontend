@@ -79,7 +79,7 @@ let current = resolve(fromQuery(location.search) ?? DEFAULT, bounds);
 const shownRows = () => shown.bucket ? shown.rows : shown.rows.filter(r => r.receivedAt >= current.from && r.receivedAt <= current.to);
 function setRange(state) {
   current = resolve(state.preset ? state : snapToPreset(clamp(state, bounds), bounds), bounds);
-  try { history.replaceState(null, '', `?${toQuery(current)}`); } catch {}
+  try { history.replaceState(null, '', `?${toQuery(current)}${week.simulated ? '&demo=1' : ''}`); } catch {}
   drawData();
 }
 function drawTimeBar() {
