@@ -2,7 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultSettings, loadSettings, validateSettings } from './settings.mjs';
 
-test('defaults are valid', () => {
+test('defaults match the configured operating ranges and are valid', () => {
+  assert.deepEqual(defaultSettings(), {
+    rules: {
+      temperature: { min: 0, max: 27, change: 1 },
+      turbidity: { min: 26, max: 28, change: 0.7 },
+      conductivity: { min: 175, max: 220, change: 35 },
+      fluorescenceRaw: { min: 2.1, max: 2.2, change: 0.05 },
+      brown: { max: 1.5 }, algae: { max: 1 }, cyano: { max: 1 },
+    },
+    offlineMinutes: 15, rssiGood: -90, rssiWeak: -105,
+  });
   assert.doesNotThrow(() => validateSettings(defaultSettings()));
 });
 
