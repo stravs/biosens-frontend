@@ -17,7 +17,7 @@ function draw() {
   $('list').innerHTML = now.items.map(i => `<li class="flex items-center gap-3 px-4.5 py-4">
     <span class="flex-none size-3.5 rounded-full ${i.unusual ? 'bg-warn-dot' : 'bg-ok'}" aria-hidden="true"></span>
     <span class="flex-1 text-[18px] font-semibold text-muted">${i.question}</span>
-    <b class="text-right ${i.unusual ? 'px-2.5 rounded-full bg-warn-bg' : ''}">${i.answer}</b></li>`).join('');
+    <b class="text-right ${i.unusual ? 'px-2.5 rounded-full bg-warn-bg' : ''}">${i.unusual ? i.answer : 'OK'}</b></li>`).join('');
 
   const day = hours(week);
   const name = k => SPEC_BY_KEY[k]?.title ?? MAIN[k].name;
