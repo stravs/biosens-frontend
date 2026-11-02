@@ -1,9 +1,9 @@
 // Podatki: charts for the main measurements, the spectrometer and a full table, for the chosen period.
 import { toCsv, rowValue } from '../lib/app.mjs';
-import { LINES, SAMPLE } from '../lib/labels.mjs';
+import { LINES, SAMPLE, SPEC } from '../lib/labels.mjs';
 import { transmission, wavelengthColor } from '../lib/spectrum.mjs';
 import { DEFAULT, PRESETS, clamp, fromInputValue, fromQuery, resolve, shift, snapToPreset, toInputValue, toQuery, zoomOut } from '../lib/timerange.mjs';
-import { AREA, PLOT, YLABEL, fillCharts, plot, syncedHover } from './chart.mjs';
+import { AREA, PLOT, YLABEL, fillCharts, plot, specMeta, syncedHover } from './chart.mjs';
 import { WEEK, fetchJson, live, loadWeek, prepare, rules } from './data.mjs';
 import { $, fmt, time } from './format.mjs';
 
@@ -47,21 +47,22 @@ function spectrumCard(range, reference) {
     <p class="my-[1em] text-[16px] text-muted">Valovna dolžina v nm. Barvni trak = 18 kanalov, vsak širok okoli 20 nm. Nad 700 nm je infrardeča svetloba (siva).</p>`;
 }
 
-function heatmap(range, reference) {
+function heatmap(range) {
   const cols = Math.min(96, range.length), size = range.length / cols;
   const buckets = Array.from({ length: cols }, (_, i) => range.slice(Math.floor(i * size), Math.floor((i + 1) * size)));
-  const grid = buckets.map(b => transmission(b.at(-1).spectrum, reference).map((c, ch) => ({ wavelength: c.wavelength,
-    value: b.reduce((s, r) => s + transmission(r.spectrum, reference)[ch].value, 0) / b.length })));
-  const lo = Math.min(98, Math.floor(Math.min(...grid.flat().map(c => c.value)))); // one scale shared by every channel
+  const grid = buckets.map(b => b.at(-1).spectrum.map((c, ch) => ({ wavelength: c.wavelength,
+    value: b.reduce((s, r) => s + r.spectrum[ch].value, 0) / b.length })));
+  const values = grid.flat().map(c => c.value);
+  const lo = Math.floor(Math.min(...values)), hi = Math.ceil(Math.max(...values)); // one measured-value scale for all channels
   const nm = grid[0].map(c => c.wavelength);
   const cells = grid.map((col, i) => col.map((c, ch) => {
-    const p = Math.round(Math.min(1, Math.max(0, (100 - c.value) / (100 - lo))) * 100);
-    return `<rect x="${i}" y="${ch}" width="1.02" height="1.02" style="fill:color-mix(in oklab, var(--color-accent) ${p}%, var(--color-card))"><title>${c.wavelength} nm · ${time(buckets[i][0].receivedAt)} · ${fmt(c.value, 1)} %</title></rect>`;
+    const p = Math.round(Math.min(1, Math.max(0, (c.value - lo) / (hi - lo || 1))) * 100);
+    return `<rect x="${i}" y="${ch}" width="1.02" height="1.02" style="fill:color-mix(in oklab, var(--color-accent) ${p}%, var(--color-card))"><title>${c.wavelength} nm · ${time(buckets[i][0].receivedAt)} · ${fmt(c.value, 1)} rel. odziv</title></rect>`;
   }).join('')).join('');
   return `<h3 class="${H3}">Vsi kanali skozi čas</h3>
-    <p class="${LEGEND}"><span>100 % (običajno)</span><i class="inline-block w-30 h-3 rounded-[3px] border border-line bg-linear-to-r from-card to-accent"></i><span>${lo} %</span><span class="text-muted">temneje = manj svetlobe</span></p>
+    <p class="${LEGEND}"><span>${fmt(lo, 1)}</span><i class="inline-block w-30 h-3 rounded-[3px] border border-line bg-linear-to-r from-card to-accent"></i><span>${fmt(hi, 1)} rel. odziv</span><span class="text-muted">temneje = večji izmerjeni odziv</span></p>
     <div class="grid grid-cols-[auto_1fr] gap-2"><div class="grid grid-rows-[repeat(18,1fr)] text-right text-[14px] leading-none text-muted">${nm.map(wl => `<span class="flex items-center justify-end gap-1.5 self-center"><i class="inline-block size-2 rounded-xs" style="background:${wavelengthColor(wl)}"></i>${wl}</span>`).join('')}</div>
-      <svg class="block w-full h-94.5 rounded-lg md:h-108" viewBox="0 0 ${cols} ${nm.length}" preserveAspectRatio="none" role="img" aria-label="Prepustnost vseh kanalov skozi čas">${cells}</svg></div>
+      <svg class="block w-full h-94.5 rounded-lg md:h-108" viewBox="0 0 ${cols} ${nm.length}" preserveAspectRatio="none" role="img" aria-label="Izmerjene vrednosti vseh kanalov skozi čas">${cells}</svg></div>
     <div class="flex justify-between gap-2 mt-1.5 pl-14.5 text-[16px] text-muted"><span>${time(range[0].receivedAt)}</span><span>${time(range.at(-1).receivedAt)}</span></div>`;
 }
 
@@ -73,6 +74,7 @@ let shown = { from: bounds.end - WEEK, to: bounds.end, bucket: null, ...week };
 let request = 0;
 const zoomTo = (from, to) => setRange({ from, to });
 const graphsHover = syncedHover($('graphs'), $('stack-time'), zoomTo);
+const specHover = syncedHover($('spec-graphs'), $('spec-time'), zoomTo);
 // Time range: one control above everything; charts, spectrometer, table and CSV all follow it.
 let current = resolve(fromQuery(location.search) ?? DEFAULT, bounds);
 // Averages are fetched for exactly the chosen period; their first bucket may start a little before it.
@@ -100,6 +102,7 @@ function drawEmpty(message) {
   $('empty').hidden = false;
   $('empty').textContent = message;
   graphsHover.set([], []);
+  specHover.set([], []);
 }
 async function drawData() {
   drawTimeBar();
@@ -125,8 +128,11 @@ async function drawData() {
   const plots = LINES.map(key => plot(range, key, rules[key], marks(key)));
   const rowEls = fillCharts($('graphs'), plots);
   graphsHover.set(range, LINES.map((key, i) => ({ key, el: rowEls[i], ...plots[i] })), newest);
+  const specPlots = SPEC.map(s => plot(range, s.key, rules[s.key], marks(s.key), specMeta(s.key)));
+  const specEls = fillCharts($('spec-graphs'), specPlots);
+  specHover.set(range, SPEC.map((s, i) => ({ key: s.key, el: specEls[i], ...specPlots[i] })), newest);
   $('spectrum').innerHTML = spectrumCard(range, reference);
-  $('spec-heat').innerHTML = heatmap(range, reference);
+  $('spec-heat').innerHTML = heatmap(range);
   $('readings').innerHTML = range.slice().reverse().map(row =>
     `<tr><td>${time(row.receivedAt)}</td>${SAMPLE.map(([key, f]) => `<td>${fmt(rowValue(row, key), f.digits)}</td>`).join('')}</tr>`).join('');
   $('table-count').textContent = shown.bucket ? `${range.length} povprečij po ${shown.bucket / 3600000} h, najnovejše zgoraj.` : `${range.length} meritev, najnovejše zgoraj.`;

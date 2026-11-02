@@ -2,13 +2,9 @@
 // Sketch 1 · Semafor: one huge answer, a plain list, and the day as 24 coloured hours.
 import Layout from '../../layouts/Layout.astro';
 import SketchNav from '../../components/SketchNav.astro';
+import WaterStatus from '../../components/WaterStatus.astro';
 ---
 <Layout view="voda" title="Voda · skica 1">
   <SketchNav current={1} />
-  <section id="hero"></section>
-  <ul id="list" class="mt-4 divide-y divide-line rounded-card bg-card shadow-card"></ul>
-  <h2>Zadnjih 24 ur</h2>
-  <div id="day" class="px-4.5 py-4 rounded-card bg-card shadow-card"></div>
+  <WaterStatus />
 </Layout>
-
-<script>import '../../scripts/skice/voda-1.mjs';</script>

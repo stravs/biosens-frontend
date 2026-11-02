@@ -3,11 +3,11 @@
 import Layout from '../layouts/Layout.astro';
 import TimeBar from '../components/TimeBar.astro';
 import ChartStack from '../components/ChartStack.astro';
-import { LABEL, LINES, SAMPLE } from '../lib/labels.mjs';
+import { LABEL, LINES, SAMPLE, SPEC } from '../lib/labels.mjs';
 
 const CARD = 'p-4 rounded-card bg-card shadow-card md:px-6 md:py-5';
-// Time line under the sticky time bar.
-const UNDER_TIMEBAR = 'top-21 md:top-20';
+// Flush under the sticky time bar: 8 px top offset + 60 px controls.
+const UNDER_TIMEBAR = 'top-17';
 const NOTE = 'my-[1em] max-w-[75ch] text-muted';
 const SWATCH = 'inline-block w-5.5 h-3.5 rounded';
 ---
@@ -27,7 +27,7 @@ const SWATCH = 'inline-block w-5.5 h-3.5 rounded';
       <ChartStack id="graphs" timeId="stack-time" top={UNDER_TIMEBAR} items={LINES.map(key => ({ title: LABEL[key] }))} />
 
       <h2>Spektrometer</h2>
-      <p class={NOTE}>Naprava posveti skozi vodo in na 18 barvah svetlobe izmeri, koliko je pride skozi. Poceni senzor ne meri koncentracij, zato vse primerjamo z običajnim stanjem te naprave v zadnjem tednu. 0 = kot običajno, več = voda prepušča manj svetlobe kot običajno. Mulj zmanjša svetlobo povsod, rjava barva predvsem modro, alge pri 680 nm, modrozelene alge pri 610 nm.</p>
+      <ChartStack id="spec-graphs" timeId="spec-time" top={UNDER_TIMEBAR} items={SPEC} class="mb-3" />
       <article id="spectrum" class={CARD}></article>
       <article id="spec-heat" class={`${CARD} mt-3`}></article>
       <p class={`${NOTE} text-[16px]`}>Kaže spremembe, ne natančnih vrednosti. Če je voda dalj časa drugačna, se ji »običajno« sčasoma prilagodi.</p>

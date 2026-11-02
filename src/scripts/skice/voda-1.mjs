@@ -8,11 +8,13 @@ const week = await loadWeek();
 
 function draw() {
   const now = snapshot(week), s = STATUS[now.status];
-  $('hero').innerHTML = `<div class="flex flex-col items-center justify-center gap-3 min-h-[42vh] px-6 py-10 rounded-card text-center ${s.tone}">
-    <span class="grid place-items-center size-24 rounded-full ${s.dot} text-[52px] font-extrabold text-card" aria-hidden="true">${s.icon}</span>
-    <h1 class="text-[40px] font-extrabold leading-[1.1] tracking-[-0.02em] md:text-[60px]">${s.title}</h1>
-    <p class="max-w-[30ch] text-[21px] font-medium md:text-[24px]">${sentence(now)}</p>
-    <p class="text-[16px] text-muted">Zadnja meritev ${time(now.latest.receivedAt)}</p></div>`;
+  $('hero').innerHTML = `<div class="flex items-center gap-3 px-4.5 py-3 rounded-card md:gap-4 md:px-6 ${s.tone}">
+    <span class="grid flex-none place-items-center size-10 rounded-full ${s.dot} text-[26px] font-extrabold text-card" aria-hidden="true">${s.icon}</span>
+    <div class="flex-1">
+      ${now.status === 'normal' ? '' : `<h1 class="text-[22px] font-bold leading-tight">${s.title}</h1>`}
+      <p class="text-[17px] font-medium md:text-[18px]">${sentence(now)}</p>
+    </div>
+    <p class="text-right text-[14px] text-muted md:text-[16px]">Zadnja meritev<br>${time(now.latest.receivedAt)}</p></div>`;
 
   $('list').innerHTML = now.items.map(i => `<li class="flex items-center gap-3 px-4.5 py-4">
     <span class="flex-none size-3.5 rounded-full ${i.unusual ? 'bg-warn-dot' : 'bg-ok'}" aria-hidden="true"></span>
