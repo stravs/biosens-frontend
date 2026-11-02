@@ -40,7 +40,7 @@ export function sentence({ status, items }) {
   const odd = items.filter(i => i.unusual).map(i => i.question.toLowerCase());
   if (status === 'offline') return 'Prikazane so zadnje prejete meritve.';
   if (status === 'unknown') return 'Za nekatere meritve ni nastavljenih običajnih območij.';
-  if (status === 'normal') return 'Vse meritve so v običajnem območju.';
+  if (status === 'normal') return 'V redu';
   return `Poglejte: ${odd.join(', ')}.`;
 }
 
