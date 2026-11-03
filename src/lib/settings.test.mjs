@@ -5,15 +5,36 @@ import { defaultSettings, loadSettings, validateSettings } from './settings.mjs'
 test('defaults match the configured operating ranges and are valid', () => {
   assert.deepEqual(defaultSettings(), {
     rules: {
-      temperature: { min: 0, max: 27, change: 1 },
-      turbidity: { min: 26, max: 28, change: 0.7 },
-      conductivity: { min: 175, max: 220, change: 35 },
-      fluorescenceRaw: { min: 2.1, max: 2.2, change: 0.05 },
-      brown: { max: 1.5 }, algae: { max: 1 }, cyano: { max: 1 },
+      temperature: { min: 0, max: 31.05, change: 1.3 },
+      turbidity: { min: 25.7, max: 28.3, change: 0.91 },
+      conductivity: { min: 168.25, max: 226.75, change: 45.5 },
+      fluorescenceRaw: { min: 2.085, max: 2.215, change: 0.065 },
+      brown: { max: 1.95 }, algae: { max: 1.3 }, cyano: { max: 1.3 },
     },
     offlineMinutes: 15, rssiGood: -90, rssiWeak: -105,
   });
   assert.doesNotThrow(() => validateSettings(defaultSettings()));
+});
+
+test('OK widths grow 30%, with water temperature minimum at zero; alert thresholds grow 30%', () => {
+  const before = {
+    temperature: [0, 27, 1], turbidity: [26, 28, 0.7],
+    conductivity: [175, 220, 35], fluorescenceRaw: [2.1, 2.2, 0.05],
+  };
+  for (const [key, [min, max, change]] of Object.entries(before)) {
+    const next = defaultSettings().rules[key];
+    if (key === 'temperature') {
+      assert.equal(next.min, 0);
+      assert.equal(next.max, 31.05);
+    } else {
+      assert.ok(Math.abs((next.max - next.min) - (max - min) * 1.3) < 1e-10);
+      assert.ok(Math.abs((next.max + next.min) - (max + min)) < 1e-10);
+    }
+    assert.ok(Math.abs(next.change - change * 1.3) < 1e-10);
+  }
+  const custom = defaultSettings();
+  custom.rules.temperature = { min: 0, max: 27, change: 1 };
+  assert.deepEqual(loadSettings(JSON.stringify(custom)).rules.temperature, custom.rules.temperature);
 });
 
 test('missing or broken saved settings fall back to defaults', () => {

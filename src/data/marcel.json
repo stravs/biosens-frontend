@@ -1,0 +1,254 @@
+[
+  {
+    "sample": "Dolinka Bled",
+    "date": "2021-10-29",
+    "group": "river",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 6,
+    "values": [
+      13.125,
+      215.49,
+      2.4042,
+      1.94,
+      957.1
+    ]
+  },
+  {
+    "sample": "Radovna srednja",
+    "date": "2021-10-29",
+    "group": "river",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 7,
+    "values": [
+      12.9375,
+      161.49,
+      2.4756,
+      1.03,
+      961.2
+    ]
+  },
+  {
+    "sample": "Dolinka Mojstrana",
+    "date": "2021-10-29",
+    "group": "river",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 8,
+    "values": [
+      13.0,
+      190.072,
+      2.4756,
+      0.73,
+      959.8
+    ]
+  },
+  {
+    "sample": "Soteska Sava Bohinjka",
+    "date": "2021-10-29",
+    "group": "river",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 9,
+    "values": [
+      13.125,
+      176.536,
+      2.4432,
+      0.73,
+      957.1
+    ]
+  },
+  {
+    "sample": "Radovna Vintgar",
+    "date": "2021-10-29",
+    "group": "river",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 10,
+    "values": [
+      12.75,
+      174.014,
+      2.3676,
+      1.01,
+      959.8
+    ]
+  },
+  {
+    "sample": "Bodeški most",
+    "date": "2021-10-29",
+    "group": "river",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 11,
+    "values": [
+      13.125,
+      199.088,
+      2.3834,
+      1.03,
+      955.7
+    ]
+  },
+  {
+    "sample": "Vodovod ČN",
+    "date": "2021-10-29",
+    "group": "tap",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 12,
+    "values": [
+      14.5,
+      419.839,
+      2.4707,
+      1.5,
+      null
+    ]
+  },
+  {
+    "sample": "Vodovod doma",
+    "date": "2021-10-29",
+    "group": "tap",
+    "sheet": "Tabela meritev (29.10.21)",
+    "row": 13,
+    "values": [
+      17.125,
+      310.399,
+      2.4756,
+      1.03,
+      931.4
+    ]
+  },
+  {
+    "sample": "Radovna_2_S2",
+    "date": "2021-12-09",
+    "group": "river",
+    "sheet": "River samples 9.12.",
+    "row": 3,
+    "values": [
+      20.5,
+      234.248,
+      2.4719,
+      1.94,
+      937.0
+    ]
+  },
+  {
+    "sample": "Sava Bohinjka_1_S2",
+    "date": "2021-12-09",
+    "group": "river",
+    "sheet": "River samples 9.12.",
+    "row": 4,
+    "values": [
+      20.1875,
+      228.895,
+      2.4725,
+      3.16,
+      936.3
+    ]
+  },
+  {
+    "sample": "Radovna_1_S2",
+    "date": "2021-12-09",
+    "group": "river",
+    "sheet": "River samples 9.12.",
+    "row": 5,
+    "values": [
+      20.0625,
+      217.702,
+      2.4725,
+      1.94,
+      939.8
+    ]
+  },
+  {
+    "sample": "Sava Bohinjka_2_S2",
+    "date": "2021-12-09",
+    "group": "river",
+    "sheet": "River samples 9.12.",
+    "row": 6,
+    "values": [
+      19.875,
+      248.697,
+      2.4707,
+      2.4,
+      932.8
+    ]
+  },
+  {
+    "sample": "Sava Dolinka_1_S2",
+    "date": "2021-12-09",
+    "group": "river",
+    "sheet": "River samples 9.12.",
+    "row": 7,
+    "values": [
+      19.8125,
+      245.494,
+      2.4725,
+      1.94,
+      935.6
+    ]
+  },
+  {
+    "sample": "Sava Dolinka_2_S2",
+    "date": "2021-12-09",
+    "group": "river",
+    "sheet": "River samples 9.12.",
+    "row": 8,
+    "values": [
+      20.0625,
+      274.658,
+      2.4719,
+      4.08,
+      925.2
+    ]
+  },
+  {
+    "sample": "Vodovod ČN · 1",
+    "date": "2021-12-09",
+    "group": "tap",
+    "sheet": "Tap water CČN Domžale 9.12.",
+    "row": 2,
+    "values": [
+      24.1875,
+      577.536,
+      2.4725,
+      3.95,
+      902.4
+    ]
+  },
+  {
+    "sample": "Vodovod ČN · 2",
+    "date": "2021-12-09",
+    "group": "tap",
+    "sheet": "Tap water CČN Domžale 9.12.",
+    "row": 3,
+    "values": [
+      24.625,
+      567.147,
+      2.4725,
+      3.93,
+      901.7
+    ]
+  },
+  {
+    "sample": "Vodovod ČN · 3",
+    "date": "2021-12-09",
+    "group": "tap",
+    "sheet": "Tap water CČN Domžale 9.12.",
+    "row": 4,
+    "values": [
+      24.8125,
+      560.628,
+      2.4713,
+      3.87,
+      901.7
+    ]
+  },
+  {
+    "sample": "Vodovod ČN · 4",
+    "date": "2021-12-09",
+    "group": "tap",
+    "sheet": "Tap water CČN Domžale 9.12.",
+    "row": 5,
+    "values": [
+      24.9375,
+      558.333,
+      2.4713,
+      3.78,
+      902.4
+    ]
+  }
+]

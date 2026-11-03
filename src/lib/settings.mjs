@@ -4,16 +4,19 @@ import { ALERT_KEYS } from './spectrum.mjs';
 
 export const STORAGE_KEY = 'settings';
 
+// OK intervals widened 30% about their midpoint; water temperature minimum then set to 0 °C.
+// Change and one-sided spectral thresholds increased 30%; device-health limits unchanged.
+// UI monitoring preferences, not validated water-safety limits. Saved overrides are preserved.
 export function defaultSettings() {
   return {
     rules: {
-      temperature: { min: 0, max: 27, change: 1 },
-      turbidity: { min: 26, max: 28, change: 0.7 },
-      conductivity: { min: 175, max: 220, change: 35 },
-      fluorescenceRaw: { min: 2.1, max: 2.2, change: 0.05 },
-      brown: { max: 1.5 },
-      algae: { max: 1 },
-      cyano: { max: 1 },
+      temperature: { min: 0, max: 31.05, change: 1.3 },
+      turbidity: { min: 25.7, max: 28.3, change: 0.91 },
+      conductivity: { min: 168.25, max: 226.75, change: 45.5 },
+      fluorescenceRaw: { min: 2.085, max: 2.215, change: 0.065 },
+      brown: { max: 1.95 },
+      algae: { max: 1.3 },
+      cyano: { max: 1.3 },
     },
     offlineMinutes: 15, rssiGood: -90, rssiWeak: -105,
   };

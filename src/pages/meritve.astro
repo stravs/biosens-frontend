@@ -33,7 +33,8 @@ const samples = fiveReadings(SAMPLES);
     <div id="measurement-spectrum" class="overflow-x-auto" aria-live="polite" set:html={renderSpectrumChart(samples)} />
     <div id="spectrum-tooltip" role="tooltip" aria-live="polite" hidden class="pointer-events-none absolute z-20 max-w-[calc(100%-16px)] rounded-2xl border border-line bg-card p-4 text-[15px] text-ink shadow-card" />
   </section>
-  <section aria-label="Prenos podatkov" class="mt-5">
+  <section aria-label="Prenos podatkov" class="mt-5 flex flex-wrap items-center gap-4">
+    <a href="/meritve-primerjava" class="inline-flex min-h-12 items-center rounded-full border border-line bg-card px-5 py-3 text-[17px] font-semibold text-accent no-underline">Primerjava · Marcel in tekoče meritve →</a>
     <a href="/meritve.csv" download="biosens_meritve_vse.csv" class="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-5 py-3 text-[17px] font-semibold text-on-accent no-underline">Prenesi vse podatke (CSV)</a>
   </section>
   <section aria-labelledby="calibration-title" class="mt-5 text-[14px]">

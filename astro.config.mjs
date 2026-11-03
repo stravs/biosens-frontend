@@ -13,5 +13,12 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    // Read-only production measurements for the local comparison page; no write proxy.
+    server: { proxy: {
+      '/comparison-api/readings': {
+        target: 'https://biosens-frontend.stravs-a.workers.dev', changeOrigin: true,
+        rewrite: () => '/api/readings',
+      },
+    } },
   },
 });

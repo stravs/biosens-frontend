@@ -79,6 +79,12 @@ Povezava je na pogledu Naprava. En skupni graf primerja prvih pet veljavnih, pop
 
 Serijski vrstni red je preverjen v firmware: fluorescenčna napetost [V], sistemska temperatura [°C], EC (ne EC25) [µS/cm], temperature čipov 1/2/3 [°C], izračunana motnost, 18 kalibriranih kanalov ATCDATA po valovni dolžini. Brez časovnih oznak uporabljamo zaporedne številke, ne izmišljenih časov. Razčlenjevanje in statistika: `src/lib/measurements.mjs`.
 
+## Primerjava meritev (`/meritve-primerjava`)
+
+Povezava s strani Meritve. Primerja vseh 38 veljavnih serijskih odčitkov iz 2. 11. 2026 z 18 veljavnimi Marcelovimi odčitki rek in vodovoda (29. 10. in 9. 12. 2021). Meritve 2. 12. so izključene. `src/data/marcel.json` ohrani list in vrstico iz preglednice; prepisa virov sta v `public/reference/`. Manjkajoči spekter ni ničla. Tekoča tabela bere `/api/readings`, pokaže zadnji uporaben paket, povprečje do petih uporabnih paketov, čas, opozorilo po 15 minutah in primerjavo z izbranim serijskim vzorcem ter ustreznima zgodovinskima razponoma. Vrsta vode tekočega preizkusa ni potrjena. Osveževanje na 2 minuti; ob napaki ne izmišljuje podatkov. V razvoju se samo branje za to stran posreduje na produkcijski API prek `/comparison-api/readings`; drugi pogledi niso spremenjeni.
+
+LoRa EC25 se približno pretvori nazaj v EC po FW2 temperaturni formuli; dejanska kalibracija delujoče naprave ni potrjena. Ničelni/nasičeni paketi so izločeni iz primerjave zaradi možne omejitve prenosa, ne zaradi potrjene fizične neveljavnosti. Motnost ni obravnavana kot skupna NTU-lestvica in se ne odšteva. Stara in nova privzeta formula sta prikazani kot pojasnilo, ne kot obnovitev Marcelove dejanske kalibracije. Testi in izračuni: `src/lib/measurement-comparison.*`.
+
 ## Spektrometer
 
 Naprava je poceni: ne meri koncentracij, ampak zazna **spremembe**. Svetloba žarnice gre skozi vodo, 18 kanalov (AS7265x, 410–940 nm) izmeri, koliko je pride skozi. Vsak odčitek se primerja z **običajnim stanjem te naprave** = mediana po kanalih v zadnjem tednu (100 %). Umerjanje s čisto vodo ni potrebno (`src/lib/spectrum.mjs`).
