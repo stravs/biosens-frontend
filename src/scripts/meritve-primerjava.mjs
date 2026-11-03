@@ -32,10 +32,6 @@ function render() {
     });
     return row;
   }));
-  document.getElementById('comparison-live-meta').textContent =
-    'Zadnjih ' + summary.count + ' uporabnih paketov: ' + time(summary.from) + ' – ' + time(summary.latest.receivedAt) +
-    ' (Europe/Ljubljana). Prenesena EC25 zadnjega paketa: ' + fmt(summary.latest.conductivity, 1) +
-    ' µS/cm. Izločenih paketov v naloženem obdobju: ' + summary.excluded + '. Razlike niso ocena onesnaženja.';
   document.getElementById('comparison-live').hidden = false;
 }
 async function refresh() {

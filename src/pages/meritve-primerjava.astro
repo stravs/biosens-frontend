@@ -21,19 +21,8 @@ const range = (rows, i) => {
   <a href="/meritve" class="text-[16px] font-semibold text-accent">← Serijske meritve</a>
   <header class="mb-6 mt-4">
     <p class="mb-2 text-[14px] font-bold uppercase tracking-widest text-accent">BioSens · primerjava meritev</p>
-    <h1 class="m-0 text-[32px] font-bold tracking-tight md:text-[42px]">Isti parametri. Različni preizkusi.</h1>
-    <p class="mt-3 max-w-3xl text-[17px] text-muted">Serijski vzorci z dne 2. 11. 2026, Marcelovi veljavni preizkusi iz leta 2021 in zadnji podatki delujoče naprave. Razlike niso dokaz spremembe kakovosti vode.</p>
+    <h1 class="m-0 text-[32px] font-bold tracking-tight md:text-[42px]">Primerjava meritev</h1>
   </header>
-  <div class="grid gap-4 md:grid-cols-3">
-    {[
-      ['2026', 'Pet serijskih vzorcev', 'Vsi veljavni odčitki, ne le prvih pet kot na strani Meritve.'],
-      ['2021', 'Samo veljavni Marcelovi rezultati', '29. oktober in 9. december. Meritve 2. decembra so izločene zaradi napačnih tokovnih nastavitev.'],
-      ['V živo', 'Zadnji paket + pet odčitkov', 'Podatki API, brez simulacije. Čas prejema je prikazan; vzorec tekočega preizkusa ni potrjen.'],
-    ].map(([tag, title, note]) => <section class="rounded-card bg-card p-5 shadow-card"><span class="text-[14px] font-bold text-accent">{tag}</span><h2 class="my-2 text-[20px]">{title}</h2><p class="m-0 text-[15px] text-muted">{note}</p></section>)}
-  </div>
-  <aside class="my-5 rounded-card border border-amber-500/40 bg-amber-500/10 p-5 text-[16px]">
-    <strong>Kalibracija ni potrjena.</strong> Dnevnik vodovodne vode kaže napako CRC in nalaganje privzetih koeficientov. Pri drugih serijskih vzorcih koeficienti niso zapisani. Nephelometer uporablja različne možne lestvice; stolpca ne primerjamo kot NTU.
-  </aside>
 
   <section id="live-comparison" data-serial={JSON.stringify(serial)} class="mt-6 rounded-card bg-card p-4 shadow-card md:p-6" aria-labelledby="live-title">
     <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="live-title" class="m-0 text-[24px]">Tekoča meritev</h2><button id="comparison-refresh" type="button" class="min-h-11 rounded-full bg-accent px-5 py-2 text-[16px] font-semibold text-on-accent disabled:opacity-50">Osveži</button></div>
@@ -48,10 +37,7 @@ const range = (rows, i) => {
         <thead><tr>{['Parameter', 'Zadnji paket', 'Zadnjih do 5', 'Serijski vzorec', 'Razlika zadnji − vzorec', 'Marcel · oktober', 'Marcel · december'].map(t => <th scope="col" class="p-3 text-muted">{t}</th>)}</tr></thead>
         <tbody id="comparison-live-body"></tbody>
       </table></div>
-      <p id="comparison-live-meta" class="text-[14px] text-muted"></p>
     </div>
-    <p class="text-[14px] text-muted">Marcelova razpona sledita izbranemu serijskemu vzorcu: vodovod ali vse reke. To ne določa vrste vode v tekočem preizkusu; za ostale vzorce ni ustrezne zgodovinske reference. Noben razpon ni varnostni prag.</p>
-    <p class="text-[14px] text-muted">¹ LoRa pošilja EC25. Za primerjavo ocenimo EC = EC25 × [1 + 0,020 × (T − 25)], po aktivni kodi FW2. To ni potrjena kalibracija naprave. Ničelne in nasičene prenose izločimo, ker lahko pomenijo omejitev paketa; veljavnosti ostalih meritev s tem ne potrdimo. Motnosti ne odštevamo.</p>
   </section>
 
   <section class="mt-6 rounded-card bg-card p-4 shadow-card md:p-6" aria-labelledby="serial-title">
@@ -79,11 +65,6 @@ const range = (rows, i) => {
     </details>
   </section>
 
-  <section class="mt-6 grid gap-5 md:grid-cols-2">
-    <div class="rounded-card bg-card p-5 shadow-card"><h2 class="mt-0 text-[22px]">Kaj lahko sklepamo?</h2><ul class="space-y-3 pl-5 text-[16px]"><li><strong>EC Save je v oktobrskem razponu.</strong> To ni dokaz točnosti brez sočasnega referenčnega merilnika.</li><li><strong>Fluorescenčna napetost je nižja.</strong> Ne ločimo učinka vode od premika optičnega ali elektronskega izhodišča.</li><li><strong>Motnosti ne moremo neposredno primerjati.</strong> Različni koeficienti in neznana Marcelova dejanska kalibracija.</li><li><strong>940 nm je blizu zgodovinskim vrednostim.</strong> To ne potrjuje ujemanja celotnega spektra.</li></ul><p class="mb-0 text-[16px] font-semibold">Ponovljivost in razlike med vzorci: da. Dokaz onesnaženja ali varnosti vode: ne.</p></div>
-    <div class="rounded-card bg-card p-5 shadow-card"><h2 class="mt-0 text-[22px]">Zakaj stara formula ne zadošča?</h2><p class="text-[15px] text-muted">x = povprečje 16 surovih odčitkov ISL29023. Privzeti formuli:</p><pre class="overflow-x-auto rounded-xl bg-page p-3 text-[13px]">Stara:  0,00004 x² + 0,2253 x − 56,755
-FW2:    0,00030 x² + 0,2549 x − 20,979</pre><p class="text-[16px]">Obrat FW2 in uporaba starih privzetih koeficientov za serijske podatke da negativne rezultate. To ni obnovljena Marcelova lestvica in ne dokazuje okvare senzorja. Potrebujemo njegove shranjene koeficiente ter preverjeno optično postavitev.</p><p class="mb-0 text-[15px] font-semibold">Naslednji korak: preveriti CRC, koeficiente in obstojnost po ponovnem zagonu; nato slepi vzorec in znani standardi.</p></div>
-  </section>
   <section class="mt-6 text-[14px] text-muted" aria-labelledby="sources-title"><h2 id="sources-title" class="text-[20px] text-ink">Viri in metoda</h2><ul class="space-y-2 pl-5"><li><a class="text-accent" href="/reference/sensor-node-prototype1-measurements-2021-12-10.md">Marcelovo poročilo · prepis DOCX, 10. 12. 2021</a></li><li><a class="text-accent" href="/reference/p3-biosens-report-2021-12-09.md">P3 BioSens · prepis preglednice XLSX</a> — stran uporablja samo liste 29. 10. in 9. 12.; prepis zaradi sledljivosti vsebuje tudi izločene liste.</li><li>Formuli: BioSens, legacy-mega ReadNefelo / CoefDefault in aktivni FW2 ReadNefelo / CoefDefault. Shranjene nastavitve lahko preglasijo privzete koeficiente.</li><li><a href="/meritve.csv" class="text-accent">Izvorne serijske meritve CSV</a> · <a href="/api/readings" class="text-accent">Tekoči API</a></li></ul></section>
 </Layout>
 <script>import '../scripts/meritve-primerjava.mjs';</script>
