@@ -5,6 +5,7 @@ import { ALERT_KEYS } from './spectrum.mjs';
 export const STORAGE_KEY = 'settings';
 
 // OK intervals widened 30% about their midpoint; water temperature minimum then set to 0 °C.
+// EC25 ceiling adjusted to 235 for the current sample (observed valid peak 227.2 on 2026-11-03).
 // Change and one-sided spectral thresholds increased 30%; device-health limits unchanged.
 // UI monitoring preferences, not validated water-safety limits. Saved overrides are preserved.
 export function defaultSettings() {
@@ -12,7 +13,7 @@ export function defaultSettings() {
     rules: {
       temperature: { min: 0, max: 31.05, change: 1.3 },
       turbidity: { min: 25.7, max: 28.3, change: 0.91 },
-      conductivity: { min: 168.25, max: 226.75, change: 45.5 },
+      conductivity: { min: 168.25, max: 235, change: 45.5 },
       fluorescenceRaw: { min: 2.085, max: 2.215, change: 0.065 },
       brown: { max: 1.95 },
       algae: { max: 1.3 },
