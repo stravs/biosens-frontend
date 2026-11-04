@@ -57,10 +57,10 @@ Opombe:
 
 ## Pogledi
 
-- **Voda** (`/`) – za vsakogar: en velik odgovor (OK / nenavadno), štiri kartice in kazalniki spektrometra v zadnjih 24 urah.
-- **Podatki** (`/podatki`) – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, običajno območje in posebni dogodki na grafu, vrzeli v podatkih ostanejo vidne; spekter in toplotna karta spektrometra; tabela vseh meritev; prenos CSV.
+- **Voda** (`/`) – za vsakogar: čas zadnje meritve (ali opozorilo, da naprava ni povezana) ter zadnje vrednosti štirih meritev in kazalnikov spektrometra. Običajna območja in hitre spremembe so zaenkrat skrite (ostanejo v skicah `/skice/…`).
+- **Podatki** (`/podatki`) – za strokovnjaka: pet grafov (temperatura, motnost, prevodnost, fluorescenca, umerjena fluorescenca) z isto časovno osjo (6 ur / 24 ur / 7 dni), skupna kazalka čez vse grafe, vrzeli v podatkih ostanejo vidne; spekter in toplotna karta spektrometra; tabela vseh meritev; prenos CSV.
 - **Naprava** (`/naprava`) – za vzdrževanje: povezava, zadnji paket, signal, temperature čipov, zadnji paketi.
-- **Nastavitve** (`/nastavitve`) – običajna območja in prag hitre spremembe za vsako meritev, meje za opozorila spektrometra, čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`).
+- **Nastavitve** (`/nastavitve`) – čas brez povezave in meje signala. Shranijo se v brskalnik (`localStorage`). Polja za običajna območja, hitre spremembe in opozorila spektrometra so zaenkrat skrita; shranjene vrednosti ostanejo.
 
 ## Izbira časa (Podatki)
 

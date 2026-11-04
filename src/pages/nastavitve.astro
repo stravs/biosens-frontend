@@ -1,42 +1,16 @@
 ---
-// Nastavitve: normal ranges per measurement, spectrometer alert limits and device limits.
+// Nastavitve: device limits. Ranges and alert limits are hidden for now.
 import Layout from '../layouts/Layout.astro';
-import { FIELDS } from '../lib/app.mjs';
-import { MAIN, SPEC_BY_KEY } from '../lib/labels.mjs';
-import { ALERT_KEYS } from '../lib/spectrum.mjs';
-
-const RULE_INPUTS = [['min', 'Od'], ['max', 'Do'], ['change', 'Sprememba v 1 h']];
-const CARD = 'min-w-0 px-4.5 pb-4.5 rounded-card bg-card shadow-card';
-const WIDE_GRID = `${CARD} grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3 pt-4.5`;
+const WIDE_GRID = 'min-w-0 px-4.5 pb-4.5 rounded-card bg-card shadow-card grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3 pt-4.5';
 const LABEL = 'grid grid-rows-[1fr_auto] gap-1.5 text-[16px] font-semibold text-muted';
 const UNIT = 'ml-0.5 font-medium text-muted';
 const INPUT = 'w-full min-h-12 px-3 border border-muted/35 rounded-xl bg-card text-[18px] font-[450] text-ink tabular-nums focus-visible:outline-offset-0';
-const NOTE = 'my-[1em] max-w-[75ch] text-muted';
 const BUTTON = 'w-full min-h-15 rounded-full font-bold md:w-auto md:min-h-13 md:px-7';
 ---
 <Layout view="nastavitve" title="Nastavitve">
   <section id="settings">
     <form id="settings-form" novalidate>
-      <h2 class="mt-1">Običajna območja</h2>
-      <p class={NOTE}>Privzeta območja OK so razširjena za 30 % okoli sredine, spodnja meja temperature vode je 0 °C, zgornja meja EC25 pa 235 µS/cm za rezervo nad opaženim vrhom trenutnega vzorca (227,2 µS/cm). Pragovi hitrih sprememb in spektrometra so višji za 30 %. Shranjene osebne nastavitve ostanejo nespremenjene — za nove privzete vrednosti izberite »Ponastavi na privzeto«. To niso potrjene meje varnosti vode.</p>
-      <p class={NOTE}>Za vsako meritev nastavite običajno območje (od–do) in mejo za hitro spremembo v eni uri. Meritev izven območja ali s hitrejšo spremembo je označena kot nenavadna. Prazno polje pomeni, da pravilo ni nastavljeno.</p>
-      <div class="grid gap-3 md:grid-cols-[1fr_1fr] md:gap-4">
-        {Object.entries(MAIN).map(([key, { name }]) => (
-          <fieldset class={CARD}><legend class="float-left w-full pt-4 pb-2.5 font-bold">{name}<span class="ml-1.5 font-medium text-muted">{FIELDS[key].unit}</span></legend>
-            <div class="clear-both grid grid-cols-[repeat(3,1fr)] gap-3">
-              {RULE_INPUTS.map(([field, label]) => <label class={LABEL}>{label}<input data-rule={key} data-field={field} type="number" inputmode="decimal" step="any" class={INPUT}></label>)}
-            </div>
-          </fieldset>
-        ))}
-      </div>
-
-      <h2>Spektrometer</h2>
-      <p class={NOTE}>Opozori, ko naprava zazna za toliko odstotkov več kot običajno. Običajno je povprečno stanje te naprave v zadnjem tednu. Prazno polje pomeni brez opozorila.</p>
-      <div class={WIDE_GRID}>
-        {ALERT_KEYS.map(key => <label class={LABEL}><span>{SPEC_BY_KEY[key].title} <span class={UNIT}>%</span></span><input data-rule={key} data-field="max" type="number" inputmode="decimal" step="any" class={INPUT}></label>)}
-      </div>
-
-      <h2>Naprava</h2>
+      <h2 class="mt-1">Naprava</h2>
       <div class={WIDE_GRID}>
         <label class={LABEL}><span>Brez povezave po <span class={UNIT}>min</span></span><input data-setting="offlineMinutes" type="number" inputmode="decimal" step="any" class={INPUT}></label>
         <label class={LABEL}><span>Dober signal od <span class={UNIT}>dBm</span></span><input data-setting="rssiGood" type="number" inputmode="decimal" step="any" class={INPUT}></label>

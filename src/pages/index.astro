@@ -1,8 +1,10 @@
 ---
-// Voda: current status, plain readings and the last 24 hours.
+// Voda: latest readings only. No ranges or alerts for now.
 import Layout from '../layouts/Layout.astro';
-import WaterStatus from '../components/WaterStatus.astro';
 ---
 <Layout view="voda" title="Voda">
-  <WaterStatus />
+  <section id="hero"></section>
+  <ul id="list" class="mt-4 divide-y divide-line rounded-card bg-card shadow-card"></ul>
 </Layout>
+
+<script>import '../scripts/voda.mjs';</script>

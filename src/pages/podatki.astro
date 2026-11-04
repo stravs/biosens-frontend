@@ -9,7 +9,6 @@ const CARD = 'p-4 rounded-card bg-card shadow-card md:px-6 md:py-5';
 // Flush under the sticky time bar: 8 px top offset + 60 px controls.
 const UNDER_TIMEBAR = 'top-17';
 const NOTE = 'my-[1em] max-w-[75ch] text-muted';
-const SWATCH = 'inline-block w-5.5 h-3.5 rounded';
 ---
 <Layout view="podatki" title="Podatki">
   <section id="expert">
@@ -20,8 +19,6 @@ const SWATCH = 'inline-block w-5.5 h-3.5 rounded';
     <div id="data">
       <h2>Grafi</h2>
       <p class="flex flex-wrap items-center gap-x-5 gap-y-1.5 max-w-[75ch] mb-3 text-[17px]">
-        <span class="inline-flex items-center gap-2"><i class={`${SWATCH} border border-ok/30 bg-ok-bg`}></i>Običajno območje</span>
-        <span class="inline-flex items-center gap-2"><i class={`${SWATCH} bg-[color-mix(in_oklab,var(--color-warn-dot)_35%,var(--color-card))]`}></i>Posebni dogodek</span>
         <span class="inline-flex items-center gap-2 text-muted">Z miško ali prstom pokažite čas – vrednosti se pokažejo v vseh grafih.</span>
       </p>
       <ChartStack id="graphs" timeId="stack-time" top={UNDER_TIMEBAR} items={LINES.map(key => ({ title: LABEL[key] }))} />

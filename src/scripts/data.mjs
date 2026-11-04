@@ -38,7 +38,7 @@ export function prepare(raw) {
 
 export async function loadWeek() {
   if (demo) {
-    source('DEMO: simulirani podatki. Privzete meje so izmišljene.', true);
+    source('DEMO: simulirani podatki.', true);
     document.querySelectorAll('nav a').forEach(a => { a.search = '?demo=1'; });
     const data = prepare(buildDemoData(1));
     return { simulated: true, bounds: { start: data.rows[0].receivedAt, end: data.rows.at(-1).receivedAt }, ...data };
@@ -50,7 +50,7 @@ export async function loadWeek() {
     const week = await fetchJson('/api/readings');
     if (week?.rows.length) {
       main.hidden = false;
-      source('Podatki z naprave. Privzete meje so izmišljene.');
+      source('Podatki z naprave.');
       return { simulated: false, cursor: week.cursor, bounds: { start: week.start, end: week.end }, ...prepare(week.rows) };
     }
     source(week ? 'Ni meritev z naprave. Ponovni poskus čez 2 minuti; za takojšen poskus osvežite stran.'
@@ -79,7 +79,7 @@ export function live(week, onPoll) {
         incoming = incoming.filter(r => r.receivedAt >= data.end - WEEK);
         cursor = data.cursor;
       } while (data.hasMore);
-      source('Podatki z naprave. Privzete meje so izmišljene.');
+      source('Podatki z naprave.');
       week.cursor = cursor;
       const gotNew = Boolean(incoming.length);
       if (gotNew) {
